@@ -1,0 +1,21 @@
+html, body {
+    height: 100%;
+    /*filter: blur(1px)*/
+}
+
+html {
+    display: table;
+    margin: auto;
+}
+
+body {
+    display: table-cell;
+    vertical-align: middle;
+    background-color: #2de3e3;
+}
+#game {
+    display: block;
+}
+canvas {
+    background-color: #ffffff;
+}

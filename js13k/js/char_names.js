@@ -1,0 +1,621 @@
+// used only for reference
+
+
+
+
+
+
+// Take 10 away from line number to get char code
+
+// 1c224a564c201e00 @ - replaced by c9808080c1e3f7ff inverted heart
+// 1824427e42424200 A
+// 7c22223c22227c00 B
+// 1c22404040221c00 C
+// 7824222222247800 D
+// 7e40407840407e00 E
+// 7e40407840404000 F
+// 1c22404e42221c00 G
+// 4242427e42424200 H
+// 1c08080808081c00 I
+// 0e04040404443800 J
+// 4244487048444200 K
+// 4040404040407e00 L
+// 42665a5a42424200 M
+// 4262524a46424200 N
+// 1824424242241800 O
+// 7c42427c40404000 P
+// 182442424a241a00 Q
+// 7c42427c48444200 R
+// 3c42403c02423c00 S
+// 3e08080808080800 T
+// 4242424242423c00 U
+// 4242422424181800 V
+// 4242425a5a664200 W
+// 4242241824424200 X
+// 2222221c08080800 Y
+// 7e02041820407e00 Z
+// 3c20202020203c00 [
+// 0c10103c10706e00 £
+// 3c04040404043c00 ]
+// 00081c2a08080808 up arrow
+// 000010207f201000 left arrow
+// 0000000000000000 space
+// 0808080800000800 !
+// 2424240000000000 "
+// 24247e247e242400 #
+// 081e281c0a3c0800 $
+// 0062640810264600 %
+// 304848304a443a00 &
+// 0408100000000000 '
+// 0408101010080400 (
+// 2010080808102000 )
+// 082a1c3e1c2a0800 *
+// 0008083e08080000 +
+// 0000000000080810 ,
+// 0000007e00000000 -
+// 0000000000181800 .
+// 0002040810204000 /
+// 3c42465a62423c00 0
+// 0818280808083e00 1
+// 3c42020c30407e00 2
+// 3c42021c02423c00 3
+// 040c14247e040400 4
+// 7e40780402443800 5
+// 1c20407c42423c00 6
+// 7e42040810101000 7
+// 3c42423c42423c00 8
+// 3c42423e02043800 9
+// 0000080000080000 :
+// 0000080000080810 ;
+// 0e18306030180e00 <
+// 00007e007e000000 =
+// 70180c060c187000 >
+// 3c42020c10001000 ?
+// 00000000ff000000 h line 5 (5th row from top)
+// 081c3e7f7f1c3e00 spades
+// 1010101010101010 v line 3 (3rd column from left)
+// 000000ff00000000 h line 4
+// 0000ff0000000000 h line 3
+// 00ff000000000000 h line 2
+// 0000000000ff0000 symbols from here to and including 127
+// 2020202020202020
+// 0404040404040404
+// 00000000e0100808
+// 0808080403000000
+// 08080810e0000000
+// 80808080808080ff
+// 8040201008040201
+// 0102040810204080
+// ff80808080808080
+// ff01010101010101
+// 003c7e7e7e7e3c00
+// 000000000000ff00
+// 367f7f7f3e1c0800
+// 4040404040404040
+// 0000000003040808
+// 8142241818244281
+// 003c424242423c00
+// 081c2a772a080800
+// 0202020202020202
+// 081c3e7f3e1c0800
+// 08080808ff080808
+// a050a050a050a050
+// 0808080808080808
+// 0000013e54141400
+// ff7f3f1f0f070301
+// 0000000000000000
+// f0f0f0f0f0f0f0f0
+// 00000000ffffffff
+// ff00000000000000
+// 00000000000000ff
+// 8080808080808080
+// aa55aa55aa55aa55
+// 0101010101010101
+// 00000000aa55aa55
+// fffefcf8f0e0c080
+// 0303030303030303
+// 080808080f080808
+// 000000000f0f0f0f
+// 080808080f000000
+// 00000000f8080808
+// 000000000000ffff
+// 000000000f080808
+// 08080808ff000000
+// 00000000ff080808
+// 08080808f8080808
+// c0c0c0c0c0c0c0c0
+// e0e0e0e0e0e0e0e0
+// 0707070707070707
+// ffff000000000000
+// ffffff0000000000
+// 0000000000ffffff
+// 01010101010101ff
+// 00000000f0f0f0f0
+// 0f0f0f0f00000000
+// 08080808f8000000
+// f0f0f0f000000000
+// f0f0f0f00f0f0f0f end of symbols
+// e3ddb5a9b3dfe1ff Inverted characters from here to 255
+// e7dbbd81bdbdbdff
+// 83ddddc3dddd83ff
+// e3ddbfbfbfdde3ff
+// 87dbdddddddb87ff
+// 81bfbf87bfbf81ff
+// 81bfbf87bfbfbfff
+// e3ddbfb1bddde3ff
+// bdbdbd81bdbdbdff
+// e3f7f7f7f7f7e3ff
+// f1fbfbfbfbbbc7ff
+// bdbbb78fb7bbbdff
+// bfbfbfbfbfbf81ff
+// bd99a5a5bdbdbdff
+// bd9dadb5b9bdbdff
+// e7dbbdbdbddbe7ff
+// 83bdbd83bfbfbfff
+// e7dbbdbdb5dbe5ff
+// 83bdbd83b7bbbdff
+// c3bdbfc3fdbdc3ff
+// c1f7f7f7f7f7f7ff
+// bdbdbdbdbdbdc3ff
+// bdbdbddbdbe7e7ff
+// bdbdbda5a599bdff
+// bdbddbe7dbbdbdff
+// dddddde3f7f7f7ff
+// 81fdfbe7dfbf81ff
+// c3dfdfdfdfdfc3ff
+// f3efefc3ef8f91ff
+// c3fbfbfbfbfbc3ff
+// fff7e3d5f7f7f7f7
+// ffffefdf80dfefff
+// ffffffffffffffff
+// f7f7f7f7fffff7ff
+// dbdbdbffffffffff
+// dbdb81db81dbdbff
+// f7e1d7e3f5c3f7ff
+// ff9d9bf7efd9b9ff
+// cfb7b7cfb5bbc5ff
+// fbf7efffffffffff
+// fbf7efefeff7fbff
+// dfeff7f7f7efdfff
+// f7d5e3c1e3d5f7ff
+// fff7f7c1f7f7ffff
+// fffffffffff7f7ef
+// ffffff81ffffffff
+// ffffffffffe7e7ff
+// fffdfbf7efdfbfff
+// c3bdb9a59dbdc3ff
+// f7e7d7f7f7f7c1ff
+// c3bdfdf3cfbf81ff
+// c3bdfde3fdbdc3ff
+// fbf3ebdb81fbfbff
+// 81bf87fbfdbbc7ff
+// e3dfbf83bdbdc3ff
+// 81bdfbf7efefefff
+// c3bdbdc3bdbdc3ff
+// c3bdbdc1fdfbc7ff
+// fffff7fffff7ffff
+// fffff7fffff7f7ef
+// f1e7cf9fcfe7f1ff
+// ffff81ff81ffffff
+// 8fe7f3f9f3e78fff
+// c3bdfdf3efffefff
+// ffffffff00ffffff
+// f7e3c18080e3c1ff
+// efefefefefefefef
+// ffffff00ffffffff
+// ffff00ffffffffff
+// ff00ffffffffffff
+// ffffffffff00ffff
+// dfdfdfdfdfdfdfdf
+// fbfbfbfbfbfbfbfb
+// ffffffff1feff7f7
+// f7f7f7fbfcffffff
+// f7f7f7ef1fffffff
+// 7f7f7f7f7f7f7f00
+// 7fbfdfeff7fbfdfe
+// fefdfbf7efdfbf7f
+// 007f7f7f7f7f7f7f
+// 00fefefefefefefe
+// ffc381818181c3ff
+// ffffffffffff00ff
+// c9808080c1e3f7ff
+// bfbfbfbfbfbfbfbf
+// fffffffffcfbf7f7
+// 7ebddbe7e7dbbd7e
+// ffc3bdbdbdbdc3ff
+// f7e3d588d5f7f7ff
+// fdfdfdfdfdfdfdfd
+// f7e3c180c1e3f7ff
+// f7f7f7f700f7f7f7
+// 5faf5faf5faf5faf
+// f7f7f7f7f7f7f7f7
+// fffffec1abebebff
+// 0080c0e0f0f8fcfe
+// ffffffffffffffff
+// 0f0f0f0f0f0f0f0f
+// ffffffff00000000
+// 00ffffffffffffff
+// ffffffffffffff00
+// 7f7f7f7f7f7f7f7f
+// 55aa55aa55aa55aa
+// fefefefefefefefe
+// ffffffff55aa55aa
+// 000103070f1f3f7f
+// fcfcfcfcfcfcfcfc
+// f7f7f7f7f0f7f7f7
+// fffffffff0f0f0f0
+// f7f7f7f7f0ffffff
+// ffffffff07f7f7f7
+// ffffffffffff0000
+// fffffffff0f7f7f7
+// f7f7f7f700ffffff
+// ffffffff00f7f7f7
+// f7f7f7f707f7f7f7
+// 3f3f3f3f3f3f3f3f
+// 1f1f1f1f1f1f1f1f
+// f8f8f8f8f8f8f8f8
+// 0000ffffffffffff
+// 000000ffffffffff
+// ffffffffff000000
+// fefefefefefefe00
+// ffffffff0f0f0f0f
+// f0f0f0f0ffffffff
+// f7f7f7f707ffffff
+// 0f0f0f0fffffffff
+// 0f0f0f0ff0f0f0f0
+// 1c224a564c201e00 @
+// 000038043c443a00 a (lowercase characters)
+// 40405c6242625c00 b
+// 00003c4240423c00 c
+// 02023a4642463a00 d
+// 00003c427e403c00 e
+// 0c12107c10101000 f
+// 00003a46463a023c g
+// 40405c6242424200 h
+// 0800180808081c00 i
+// 04000c0404044438 j
+// 4040444850684400 k
+// 1808080808081c00 l
+// 0000764949494900 m
+// 00005c6242424200 n
+// 00003c4242423c00 o
+// 00005c62625c4040 p
+// 00003a46463a0202 q
+// 00005c6240404000 r
+// 00003e403c027c00 s
+// 10107c1010120c00 t
+// 0000424242463a00 u
+// 0000424242241800 v
+// 0000414949493600 w
+// 0000422418244200 x
+// 00004242463a023c y
+// 00007e0418207e00 z
+// 3c20202020203c00
+// 0c10103c10706e00
+// 3c04040404043c00
+// 00081c2a08080808
+// 000010207f201000
+// 0000000000000000
+// 0808080800000800
+// 2424240000000000
+// 24247e247e242400
+// 081e281c0a3c0800
+// 0062640810264600
+// 304848304a443a00
+// 0408100000000000
+// 0408101010080400
+// 2010080808102000
+// 082a1c3e1c2a0800
+// 0008083e08080000
+// 0000000000080810
+// 0000007e00000000
+// 0000000000181800
+// 0002040810204000
+// 3c42465a62423c00
+// 0818280808083e00
+// 3c42020c30407e00
+// 3c42021c02423c00
+// 040c14247e040400
+// 7e40780402443800
+// 1c20407c42423c00
+// 7e42040810101000
+// 3c42423c42423c00
+// 3c42423e02043800
+// 0000080000080000
+// 0000080000080810
+// 0e18306030180e00
+// 00007e007e000000
+// 70180c060c187000
+// 3c42020c10001000
+// 00000000ff000000
+// 1824427e42424200
+// 7c22223c22227c00
+// 1c22404040221c00
+// 7824222222247800
+// 7e40407840407e00
+// 7e40407840404000
+// 1c22404e42221c00
+// 4242427e42424200
+// 1c08080808081c00
+// 0e04040404443800
+// 4244487048444200
+// 4040404040407e00
+// 42665a5a42424200
+// 4262524a46424200
+// 1824424242241800
+// 7c42427c40404000
+// 182442424a241a00
+// 7c42427c48444200
+// 3c42403c02423c00
+// 3e08080808080800
+// 4242424242423c00
+// 4242422424181800
+// 4242425a5a664200
+// 4242241824424200
+// 2222221c08080800
+// 7e02041820407e00
+// 08080808ff080808
+// a050a050a050a050
+// 0808080808080808
+// cccc3333cccc3333
+// cc663399cc663399
+// 0000000000000000
+// f0f0f0f0f0f0f0f0
+// 00000000ffffffff
+// ff00000000000000
+// 00000000000000ff
+// 8080808080808080
+// aa55aa55aa55aa55
+// 0101010101010101
+// 00000000aa55aa55
+// 993366cc993366cc
+// 0303030303030303
+// 080808080f080808
+// 000000000f0f0f0f
+// 080808080f000000
+// 00000000f8080808
+// 000000000000ffff
+// 000000000f080808
+// 08080808ff000000
+// 00000000ff080808
+// 08080808f8080808
+// c0c0c0c0c0c0c0c0
+// e0e0e0e0e0e0e0e0
+// 0707070707070707
+// ffff000000000000
+// ffffff0000000000
+// 0000000000ffffff
+// 0102444850604000
+// 00000000f0f0f0f0
+// 0f0f0f0f00000000
+// 08080808f8000000
+// f0f0f0f000000000
+// f0f0f0f00f0f0f0f
+// e3ddb5a9b3dfe1ff
+// ffffc7fbc3bbc5ff
+// bfbfa39dbd9da3ff
+// ffffc3bdbfbdc3ff
+// fdfdc5b9bdb9c5ff
+// ffffc3bd81bfc3ff
+// f3edef83efefefff
+// ffffc5b9b9c5fdc3
+// bfbfa39dbdbdbdff
+// f7ffe7f7f7f7e3ff
+// fbfff3fbfbfbbbc7
+// bfbfbbb7af97bbff
+// e7f7f7f7f7f7e3ff
+// ffff89b6b6b6b6ff
+// ffffa39dbdbdbdff
+// ffffc3bdbdbdc3ff
+// ffffa39d9da3bfbf
+// ffffc5b9b9c5fdfd
+// ffffa39dbfbfbfff
+// ffffc1bfc3fd83ff
+// efef83efefedf3ff
+// ffffbdbdbdb9c5ff
+// ffffbdbdbddbe7ff
+// ffffbeb6b6b6c9ff
+// ffffbddbe7dbbdff
+// ffffbdbdb9c5fdc3
+// ffff81fbe7df81ff
+// c3dfdfdfdfdfc3ff
+// f3efefc3ef8f91ff
+// c3fbfbfbfbfbc3ff
+// fff7e3d5f7f7f7f7
+// ffffefdf80dfefff
+// ffffffffffffffff
+// f7f7f7f7fffff7ff
+// dbdbdbffffffffff
+// dbdb81db81dbdbff
+// f7e1d7e3f5c3f7ff
+// ff9d9bf7efd9b9ff
+// cfb7b7cfb5bbc5ff
+// fbf7efffffffffff
+// fbf7efefeff7fbff
+// dfeff7f7f7efdfff
+// f7d5e3c1e3d5f7ff
+// fff7f7c1f7f7ffff
+// fffffffffff7f7ef
+// ffffff81ffffffff
+// ffffffffffe7e7ff
+// fffdfbf7efdfbfff
+// c3bdb9a59dbdc3ff
+// f7e7d7f7f7f7c1ff
+// c3bdfdf3cfbf81ff
+// c3bdfde3fdbdc3ff
+// fbf3ebdb81fbfbff
+// 81bf87fbfdbbc7ff
+// e3dfbf83bdbdc3ff
+// 81bdfbf7efefefff
+// c3bdbdc3bdbdc3ff
+// c3bdbdc1fdfbc7ff
+// fffff7fffff7ffff
+// fffff7fffff7f7ef
+// f1e7cf9fcfe7f1ff
+// ffff81ff81ffffff
+// 8fe7f3f9f3e78fff
+// c3bdfdf3efffefff
+// ffffffff00ffffff
+// e7dbbd81bdbdbdff
+// 83ddddc3dddd83ff
+// e3ddbfbfbfdde3ff
+// 87dbdddddddb87ff
+// 81bfbf87bfbf81ff
+// 81bfbf87bfbfbfff
+// e3ddbfb1bddde3ff
+// bdbdbd81bdbdbdff
+// e3f7f7f7f7f7e3ff
+// f1fbfbfbfbbbc7ff
+// bdbbb78fb7bbbdff
+// bfbfbfbfbfbf81ff
+// bd99a5a5bdbdbdff
+// bd9dadb5b9bdbdff
+// e7dbbdbdbddbe7ff
+// 83bdbd83bfbfbfff
+// e7dbbdbdb5dbe5ff
+// 83bdbd83b7bbbdff
+// c3bdbfc3fdbdc3ff
+// c1f7f7f7f7f7f7ff
+// bdbdbdbdbdbdc3ff
+// bdbdbddbdbe7e7ff
+// bdbdbda5a599bdff
+// bdbddbe7dbbdbdff
+// dddddde3f7f7f7ff
+// 81fdfbe7dfbf81ff
+// f7f7f7f700f7f7f7
+// 5faf5faf5faf5faf
+// f7f7f7f7f7f7f7f7
+// 3333cccc3333cccc
+// 3399cc663399cc66
+// ffffffffffffffff
+// 0f0f0f0f0f0f0f0f
+// ffffffff00000000
+// 00ffffffffffffff
+// ffffffffffffff00
+// 7f7f7f7f7f7f7f7f
+// 55aa55aa55aa55aa
+// fefefefefefefefe
+// ffffffff55aa55aa
+// 66cc993366cc9933
+// fcfcfcfcfcfcfcfc
+// f7f7f7f7f0f7f7f7
+// fffffffff0f0f0f0
+// f7f7f7f7f0ffffff
+// ffffffff07f7f7f7
+// ffffffffffff0000
+// fffffffff0f7f7f7
+// f7f7f7f700ffffff
+// ffffffff00f7f7f7
+// f7f7f7f707f7f7f7
+// 3f3f3f3f3f3f3f3f
+// 1f1f1f1f1f1f1f1f
+// f8f8f8f8f8f8f8f8
+// 0000ffffffffffff
+// 000000ffffffffff
+// ffffffffff000000
+// fefdbbb7af9fbfff
+// ffffffff0f0f0f0f
+// f0f0f0f0ffffffff
+// f7f7f7f707ffffff
+// 0f0f0f0fffffffff
+// 0f0f0f0ff0f0f0f0
+
+
+
+
+
+
+
+
+
+
+// 0000000000000000 space
+// 0808080800000800 !
+// 2424240000000000 "
+// 24247e247e242400 #
+// 081e281c0a3c0800 $ - replaced by 080808082a1c0800 down arrow
+// 0062640810264600 % - replaced by 00000804fe040800 right arrow
+// 304848304a443a00 &
+// 0408100000000000 '
+// 0408101010080400 (
+// 2010080808102000 )
+// 082a1c3e1c2a0800 *
+// 0008083e08080000 +
+// 0000000000080810 ,
+// 0000007e00000000 -
+// 0000000000181800 .
+// 0002040810204000 / - replaced by 367f7f7f3e1c0800 heart
+// 3c42465a62423c00 0
+// 0818280808083e00 1
+// 3c42020c30407e00 2
+// 3c42021c02423c00 3
+// 040c14247e040400 4
+// 7e40780402443800 5
+// 1c20407c42423c00 6
+// 7e42040810101000 7
+// 3c42423c42423c00 8
+// 3c42423e02043800 9
+// 0000080000080000 :
+// 0000080000080810 ; - replaced by 000000ff00000000 h line
+// 0e18306030180e00 <
+// 00007e007e000000 =
+// 70180c060c187000 >
+// 3c42020c10001000 ?
+// 1c224a564c201e00 @ - replaced by c9808080c1e3f7ff inverted heart
+// 1824427e42424200 A
+// 7c22223c22227c00 B
+// 1c22404040221c00 C
+// 7824222222247800 D
+// 7e40407840407e00 E
+// 7e40407840404000 F
+// 1c22404e42221c00 G
+// 4242427e42424200 H
+// 1c08080808081c00 I
+// 0e04040404443800 J
+// 4244487048444200 K
+// 4040404040407e00 L
+// 42665a5a42424200 M
+// 4262524a46424200 N
+// 1824424242241800 O
+// 7c42427c40404000 P
+// 182442424a241a00 Q
+// 7c42427c48444200 R
+// 3c42403c02423c00 S
+// 3e08080808080800 T
+// 4242424242423c00 U
+// 4242422424181800 V
+// 4242425a5a664200 W
+// 4242241824424200 X
+// 2222221c08080800 Y
+// 7e02041820407e00 Z
+// 3c20202020203c00 [
+// 0c10103c10706e00 £
+// 3c04040404043c00 ]
+// 00081c2a08080808 up arrow
+// 000010207f201000 left arrow
+// 000038043c443a00 a (lowercase characters)
+// 40405c6242625c00 b
+// 00003c4240423c00 c
+// 02023a4642463a00 d
+// 00003c427e403c00 e
+// 0c12107c10101000 f
+// 00003a46463a023c g
+// 40405c6242424200 h
+// 0800180808081c00 i
+// 04000c0404044438 j
+// 4040444850684400 k
+// 1808080808081c00 l
+// 0000764949494900 m
+// 00005c6242424200 n
+// 00003c4242423c00 o
+// 00005c62625c4040 p
+// 00003a46463a0202 q
+// 00005c6240404000 r
+// 00003e403c027c00 s
+// 10107c1010120c00 t
+// 0000424242463a00 u
+// 0000424242241800 v
+// 0000414949493600 w
+// 0000422418244200 x
+// 00004242463a023c y
+// 00007e0418207e00 z
