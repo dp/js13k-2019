@@ -17,10 +17,11 @@
       this.ground = this.blockToPixelH(22);
       this.height = this.ground - this.sky;
       this.items = [];
+      this.levelEnded = false;
       this.playerShots = new ItemPool(PlayerShot, 10);
       this.enemyShots = new ItemPool(EnemyShot, 200);
       this.particles = new ItemPool(Particle, 2000);
-      this.generate();
+      this.generate(this.level);
     }
 
     World.prototype.blockToPixelH = function(block) {
@@ -31,16 +32,33 @@
       return block * 8 * Screen.pixelW;
     };
 
-    World.prototype.generate = function() {
-      var i, j, k, l, results;
-      for (i = j = 0; j <= 5; i = ++j) {
+    World.prototype.generate = function(levelNo) {
+      var i, item, j, k, l, len, len1, len2, m, n, o, ref, ref1, ref2, ref3, ref4, ref5, results;
+      this.levelEnded = false;
+      this.items = [];
+      ref = this.playerShots.pool;
+      for (j = 0, len = ref.length; j < len; j++) {
+        item = ref[j];
+        item.dead = true;
+      }
+      ref1 = this.enemyShots.pool;
+      for (k = 0, len1 = ref1.length; k < len1; k++) {
+        item = ref1[k];
+        item.dead = true;
+      }
+      ref2 = this.particles.pool;
+      for (l = 0, len2 = ref2.length; l < len2; l++) {
+        item = ref2[l];
+        item.dead = true;
+      }
+      for (i = m = 0, ref3 = randInt(3) + 4; 0 <= ref3 ? m <= ref3 : m >= ref3; i = 0 <= ref3 ? ++m : --m) {
         this.items.push(new Building(randInt(this.spawnWidth), this.ground));
       }
-      for (i = k = 0; k <= 5; i = ++k) {
+      for (i = n = 0, ref4 = 4 + levelNo; 0 <= ref4 ? n <= ref4 : n >= ref4; i = 0 <= ref4 ? ++n : --n) {
         this.items.push(new Radar(randInt(this.spawnWidth), this.ground));
       }
       results = [];
-      for (i = l = 0; l <= 10; i = ++l) {
+      for (i = o = 0, ref5 = 5 + 2 * levelNo; 0 <= ref5 ? o <= ref5 : o >= ref5; i = 0 <= ref5 ? ++o : --o) {
         results.push(this.items.push(new UFO(randInt(this.spawnWidth), randInt(this.blockToPixelH(11)) + this.blockToPixelH(4.5))));
       }
       return results;
@@ -60,7 +78,7 @@
 
     World.prototype.update = function(delta) {
       var item, j, k, l, len, len1, len2, len3, lhs, m, ref, ref1, ref2, ref3, rhs;
-      if (!this.ship.dead) {
+      if (!(this.ship.dead || this.ship.autopilot || this.ship.warping)) {
         if (keysDown.right) {
           this.ship.moveH(delta, 1);
         } else if (keysDown.left) {
@@ -75,6 +93,10 @@
         if (keysDown.fire) {
           this.ship.fireShot();
         }
+      }
+      if (this.ship.warping) {
+        this.ship.moveH(delta, 1);
+        this.ship.moveV(delta, 1);
       }
       rhs = this.ship.x + this.halfWidth;
       lhs = this.ship.x - this.halfWidth;
@@ -98,9 +120,11 @@
         item = ref3[m];
         this.updateItem(item, delta, rhs, lhs);
       }
-      if (!this.ship.dead) {
+      if (!(this.ship.dead || this.ship.autopilot || this.ship.warping)) {
         this.seeIfEnemyHit();
-        return this.seeIfPlayerHit();
+        if (!this.ship.invulnerable) {
+          return this.seeIfPlayerHit();
+        }
       }
     };
 
@@ -142,7 +166,11 @@
         item = ref3[m];
         this.drawItem(item, offsetX);
       }
+      if (this.ship.invulnerable) {
+        this.ctx.globalAlpha = 0.5;
+      }
       this.drawItem(this.ship, offsetX);
+      this.ctx.globalAlpha = 1.0;
       return this.drawRadar();
     };
 
@@ -258,13 +286,7 @@
         y: hitPointY - this.ship.y
       };
       this.explodeSprite(this.ship, hitPoint, 1);
-      Game.livesLeft -= 1;
-      if (Game.livesLeft === 0) {
-        this.ship.dead = true;
-        return Game.state = GameStates.GAME_OVER;
-      } else {
-        return this.ship.y = 8 * 12 * Screen.pixelH;
-      }
+      return Game.respawnPlayer();
     };
 
     World.prototype.enemyDies = function(enemy, hitPointX, hitPointY) {

@@ -1,11 +1,11 @@
 GameStates =
-    PRE_LAUNCH: 0
-    TITLE_SCREEN: 1
-    PLAYING_IN_PLAY: 2
-    PLAYING_WARPING: 3
-    START_OF_LEVEL: 4
-    PLAYING_BETWEEN_LIVES: 5
-    GAME_OVER: 6
+    PRE_LAUNCH: 'PRE_LAUNCH'
+    TITLE_SCREEN: 'TITLE_SCREEN'
+    PLAYING_IN_PLAY: 'PLAYING_IN_PLAY'
+    PLAYING_WARPING: 'PLAYING_WARPING'
+    START_OF_LEVEL: 'START_OF_LEVEL'
+    PLAYING_SPAWNING: 'PLAYING_SPAWNING'
+    GAME_OVER: 'GAME_OVER'
 
 Game =
     state: GameStates.PRE_LAUNCH
@@ -13,6 +13,7 @@ Game =
     run: ->
         @ctx = Screen.ctx
         @canvas = Screen.canvas
+        @cooldown = 0
         Screen.setSize(25, 23)
         Screen.screenColour = Colours.BLACK
         Screen.textColour = Colours.WHITE
@@ -28,12 +29,47 @@ Game =
         else
             delta = 0
         @lastTimestamp = timestamp
+        @cooldown -= delta
+
+        if @state != @lastState
+            console.log 'Changed state to ', @state
+            @lastState = @state
 
         if @state == GameStates.TITLE_SCREEN
-            if keysDown.fire
+            if keysDown.fire && @cooldown <= 0
                 @startGame()
 
-        else if @state == GameStates.PLAYING || @state == GameStates.PLAYING_WARPING || @state == GameStates.GAME_OVER
+        else
+            if @state == GameStates.GAME_OVER
+                if keysDown.fire && @cooldown <= 0
+                    @state = GameStates.TITLE_SCREEN
+                    @cooldown = 1
+                    @showTitleScreen()
+
+            else if @state == GameStates.PLAYING_SPAWNING
+                if @cooldown < 0
+                    @state = GameStates.PLAYING_IN_PLAY
+                    @ship.invulnerable = false
+                else if @cooldown < 2
+                    @ship.dead = false
+                    @ship.autopilot = false
+                    @ship.invulnerable = true
+
+            else if @state == GameStates.PLAYING_WARPING
+                if @cooldown < 0
+                    @state = GameStates.PLAYING_SPAWNING
+                    @ship.autopilot = false
+                    @ship.invulnerable = true
+                    @ship.warping = false
+                    @cooldown = 2
+                else if @cooldown < 2 && @world.levelEnded
+                    @level += 1
+                    @world.generate(@level)
+#
+#            else if @state == GameStates.PLAYING_IN_PLAY
+#                true
+                # do nothing
+        unless @state == GameStates.TITLE_SCREEN
             @world.update(delta)
             @draw()
 
@@ -42,14 +78,13 @@ Game =
             Screen.screenColour = Colours.PURPLE
             Screen.clear()
             Screen.textColour = Colours.WHITE
-            Screen.printAt 5, 8, 'LEVEL 1 CLEARED'
+            levelText = if @world.levelEnded
+                            @level
+                        else
+                            @level - 1
+            Screen.printAt 5, 8, "LEVEL #{levelText} CLEARED"
             Screen.printAt 8, 10, 'WARPING ...'
-            Screen.printAt 2, 14, 'Sorry, that\'s all I\'ve programmed for the moment'
             Screen.textColour = Colours.BLUE
-        else if @state == GameStates.GAME_OVER
-            Screen.textColour = Colours.WHITE
-            Screen.printAt 8, 8, 'GAME OVER'
-            Screen.printAt 4, 10, 'Haven\'t programmed    ability to restart game  yet, so you\'re stuck on  this screen :)'
         else
             @ctx.fillStyle = Colours.BLACK
             @ctx.fillRect(0, 0, @canvas.width, @canvas.height)
@@ -57,12 +92,19 @@ Game =
 
         Screen.printAt 1, 2, ''+@score
         Screen.printAt 12, 2, ''+@level
-        for i in [1..@livesLeft]
-            Screen.printAt 24 - i, 2, '/' # prints a heart character
+        if @livesLeft > 0
+            for i in [1..@livesLeft]
+                Screen.printAt 24 - i, 2, '/' # prints a heart character
         @world.draw()
 
+        if @state == GameStates.GAME_OVER
+            Screen.textColour = Colours.WHITE
+            Screen.printAt 8, 8, 'GAME OVER'
+            if @cooldown < 0
+                Screen.printAt 7, 10, 'Press  FIRE'
+
     startGame: ->
-        @state = GameStates.PLAYING
+        @state = GameStates.PLAYING_SPAWNING
         Screen.clear()
         Screen.printAt 8, 4, "Playing ..."
         @score = 0
@@ -70,9 +112,30 @@ Game =
         @level = 1
         @ship = new Ship()
         @world = new World(1, @ship)
+        @cooldown = 2
 
     warpToNextWorld: ->
         @state = GameStates.PLAYING_WARPING
+        @cooldown = 5
+        @ship.warping = true
+        @world.levelEnded = true
+
+
+    endGame: ->
+        @state = GameStates.GAME_OVER
+        @cooldown = 3
+
+    respawnPlayer: ->
+        @ship.dead = true
+        @ship.autopilot = true
+        if @livesLeft == 0
+            @endGame()
+        else
+            @livesLeft -= 1
+            @ship.y = 8 * 12 * Screen.pixelH
+            @state = GameStates.PLAYING_SPAWNING
+            @cooldown = 3
+
 
     hLine: (row) ->
         Screen.printAt 0, row, ';;;;;;;;;;;;;;;;;;;;;;;;;'
@@ -80,6 +143,7 @@ Game =
 
     showTitleScreen: ->
         @state = GameStates.TITLE_SCREEN
+        Screen.screenColour = Colours.BLACK
         Screen.clear()
         Screen.printAt 8, 4, "ASTROBLITZ"
         #        @hLine(5)

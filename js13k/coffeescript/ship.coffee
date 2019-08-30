@@ -13,6 +13,10 @@ class Ship
         @minY = 18 * Screen.pixelH
         @maxY = 168 * Screen.pixelH
         @offScreen = false
+        @dead = false
+        @autopilot = false
+        @invulnerable = false
+        @warping = false
         @cooldown = 0.3
         @hitbox = buildHitbox(@offsetX, @offsetY, 0, 0, 32, 13)
 
@@ -27,16 +31,30 @@ class Ship
         @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, @facingLeft)
 
     moveV: (delta, direction) ->
-        @y += direction * delta * @vSpeed
-        if @y < @minY then @y = @minY
-        if @y > @maxY then @y = @maxY
+        if @warping
+            target = Game.world.blockToPixelH(13)
+#            console.log(target, @y)
+            if Math.abs(target - @y) < 2
+                @y = target
+            else if @y > target
+                @y -= 1
+            else
+                @y += 1
+        else
+            @y += direction * delta * @vSpeed
+            if @y < @minY then @y = @minY
+            if @y > @maxY then @y = @maxY
 
 
     moveH: (delta, direction) ->
-        @x += direction * delta * @hSpeed
+        if @warping
+            @x += delta * @hSpeed * 5
+        else
+            @x += direction * delta * @hSpeed
         @facingLeft = direction < 0
 
     fireShot: ->
+        return if @warping
         if @cooldown > 0
             return
         shotSpeed = 200 * Screen.pixelW
@@ -46,7 +64,7 @@ class Ship
             shotOffset *= -1
 
         Game.world.getNextPlayerShot().fire(@x + shotOffset, @y + 2 * Screen.pixelH, shotSpeed)
-        @cooldown = 0.1
+        @cooldown = 0.2
 
 
 class PlayerShot

@@ -17,6 +17,10 @@
       this.minY = 18 * Screen.pixelH;
       this.maxY = 168 * Screen.pixelH;
       this.offScreen = false;
+      this.dead = false;
+      this.autopilot = false;
+      this.invulnerable = false;
+      this.warping = false;
       this.cooldown = 0.3;
       this.hitbox = buildHitbox(this.offsetX, this.offsetY, 0, 0, 32, 13);
     }
@@ -35,22 +39,41 @@
     };
 
     Ship.prototype.moveV = function(delta, direction) {
-      this.y += direction * delta * this.vSpeed;
-      if (this.y < this.minY) {
-        this.y = this.minY;
-      }
-      if (this.y > this.maxY) {
-        return this.y = this.maxY;
+      var target;
+      if (this.warping) {
+        target = Game.world.blockToPixelH(13);
+        if (Math.abs(target - this.y) < 2) {
+          return this.y = target;
+        } else if (this.y > target) {
+          return this.y -= 1;
+        } else {
+          return this.y += 1;
+        }
+      } else {
+        this.y += direction * delta * this.vSpeed;
+        if (this.y < this.minY) {
+          this.y = this.minY;
+        }
+        if (this.y > this.maxY) {
+          return this.y = this.maxY;
+        }
       }
     };
 
     Ship.prototype.moveH = function(delta, direction) {
-      this.x += direction * delta * this.hSpeed;
+      if (this.warping) {
+        this.x += delta * this.hSpeed * 5;
+      } else {
+        this.x += direction * delta * this.hSpeed;
+      }
       return this.facingLeft = direction < 0;
     };
 
     Ship.prototype.fireShot = function() {
       var shotOffset, shotSpeed;
+      if (this.warping) {
+        return;
+      }
       if (this.cooldown > 0) {
         return;
       }
@@ -61,7 +84,7 @@
         shotOffset *= -1;
       }
       Game.world.getNextPlayerShot().fire(this.x + shotOffset, this.y + 2 * Screen.pixelH, shotSpeed);
-      return this.cooldown = 0.1;
+      return this.cooldown = 0.2;
     };
 
     return Ship;

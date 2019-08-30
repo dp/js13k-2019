@@ -3,13 +3,13 @@
   var Game, GameStates;
 
   GameStates = {
-    PRE_LAUNCH: 0,
-    TITLE_SCREEN: 1,
-    PLAYING_IN_PLAY: 2,
-    PLAYING_WARPING: 3,
-    START_OF_LEVEL: 4,
-    PLAYING_BETWEEN_LIVES: 5,
-    GAME_OVER: 6
+    PRE_LAUNCH: 'PRE_LAUNCH',
+    TITLE_SCREEN: 'TITLE_SCREEN',
+    PLAYING_IN_PLAY: 'PLAYING_IN_PLAY',
+    PLAYING_WARPING: 'PLAYING_WARPING',
+    START_OF_LEVEL: 'START_OF_LEVEL',
+    PLAYING_SPAWNING: 'PLAYING_SPAWNING',
+    GAME_OVER: 'GAME_OVER'
   };
 
   Game = {
@@ -17,6 +17,7 @@
     run: function() {
       this.ctx = Screen.ctx;
       this.canvas = Screen.canvas;
+      this.cooldown = 0;
       Screen.setSize(25, 23);
       Screen.screenColour = Colours.BLACK;
       Screen.textColour = Colours.WHITE;
@@ -34,29 +35,59 @@
         delta = 0;
       }
       this.lastTimestamp = timestamp;
+      this.cooldown -= delta;
+      if (this.state !== this.lastState) {
+        console.log('Changed state to ', this.state);
+        this.lastState = this.state;
+      }
       if (this.state === GameStates.TITLE_SCREEN) {
-        if (keysDown.fire) {
-          return this.startGame();
+        if (keysDown.fire && this.cooldown <= 0) {
+          this.startGame();
         }
-      } else if (this.state === GameStates.PLAYING || this.state === GameStates.PLAYING_WARPING || this.state === GameStates.GAME_OVER) {
+      } else {
+        if (this.state === GameStates.GAME_OVER) {
+          if (keysDown.fire && this.cooldown <= 0) {
+            this.state = GameStates.TITLE_SCREEN;
+            this.cooldown = 1;
+            this.showTitleScreen();
+          }
+        } else if (this.state === GameStates.PLAYING_SPAWNING) {
+          if (this.cooldown < 0) {
+            this.state = GameStates.PLAYING_IN_PLAY;
+            this.ship.invulnerable = false;
+          } else if (this.cooldown < 2) {
+            this.ship.dead = false;
+            this.ship.autopilot = false;
+            this.ship.invulnerable = true;
+          }
+        } else if (this.state === GameStates.PLAYING_WARPING) {
+          if (this.cooldown < 0) {
+            this.state = GameStates.PLAYING_SPAWNING;
+            this.ship.autopilot = false;
+            this.ship.invulnerable = true;
+            this.ship.warping = false;
+            this.cooldown = 2;
+          } else if (this.cooldown < 2 && this.world.levelEnded) {
+            this.level += 1;
+            this.world.generate(this.level);
+          }
+        }
+      }
+      if (this.state !== GameStates.TITLE_SCREEN) {
         this.world.update(delta);
         return this.draw();
       }
     },
     draw: function() {
-      var i, j, ref;
+      var i, j, levelText, ref;
       if (this.state === GameStates.PLAYING_WARPING) {
         Screen.screenColour = Colours.PURPLE;
         Screen.clear();
         Screen.textColour = Colours.WHITE;
-        Screen.printAt(5, 8, 'LEVEL 1 CLEARED');
+        levelText = this.world.levelEnded ? this.level : this.level - 1;
+        Screen.printAt(5, 8, "LEVEL " + levelText + " CLEARED");
         Screen.printAt(8, 10, 'WARPING ...');
-        Screen.printAt(2, 14, 'Sorry, that\'s all I\'ve programmed for the moment');
         Screen.textColour = Colours.BLUE;
-      } else if (this.state === GameStates.GAME_OVER) {
-        Screen.textColour = Colours.WHITE;
-        Screen.printAt(8, 8, 'GAME OVER');
-        Screen.printAt(4, 10, 'Haven\'t programmed    ability to restart game  yet, so you\'re stuck on  this screen :)');
       } else {
         this.ctx.fillStyle = Colours.BLACK;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -64,29 +95,59 @@
       }
       Screen.printAt(1, 2, '' + this.score);
       Screen.printAt(12, 2, '' + this.level);
-      for (i = j = 1, ref = this.livesLeft; 1 <= ref ? j <= ref : j >= ref; i = 1 <= ref ? ++j : --j) {
-        Screen.printAt(24 - i, 2, '/');
+      if (this.livesLeft > 0) {
+        for (i = j = 1, ref = this.livesLeft; 1 <= ref ? j <= ref : j >= ref; i = 1 <= ref ? ++j : --j) {
+          Screen.printAt(24 - i, 2, '/');
+        }
       }
-      return this.world.draw();
+      this.world.draw();
+      if (this.state === GameStates.GAME_OVER) {
+        Screen.textColour = Colours.WHITE;
+        Screen.printAt(8, 8, 'GAME OVER');
+        if (this.cooldown < 0) {
+          return Screen.printAt(7, 10, 'Press  FIRE');
+        }
+      }
     },
     startGame: function() {
-      this.state = GameStates.PLAYING;
+      this.state = GameStates.PLAYING_SPAWNING;
       Screen.clear();
       Screen.printAt(8, 4, "Playing ...");
       this.score = 0;
       this.livesLeft = 4;
       this.level = 1;
       this.ship = new Ship();
-      return this.world = new World(1, this.ship);
+      this.world = new World(1, this.ship);
+      return this.cooldown = 2;
     },
     warpToNextWorld: function() {
-      return this.state = GameStates.PLAYING_WARPING;
+      this.state = GameStates.PLAYING_WARPING;
+      this.cooldown = 5;
+      this.ship.warping = true;
+      return this.world.levelEnded = true;
+    },
+    endGame: function() {
+      this.state = GameStates.GAME_OVER;
+      return this.cooldown = 3;
+    },
+    respawnPlayer: function() {
+      this.ship.dead = true;
+      this.ship.autopilot = true;
+      if (this.livesLeft === 0) {
+        return this.endGame();
+      } else {
+        this.livesLeft -= 1;
+        this.ship.y = 8 * 12 * Screen.pixelH;
+        this.state = GameStates.PLAYING_SPAWNING;
+        return this.cooldown = 3;
+      }
     },
     hLine: function(row) {
       return Screen.printAt(0, row, ';;;;;;;;;;;;;;;;;;;;;;;;;');
     },
     showTitleScreen: function() {
       this.state = GameStates.TITLE_SCREEN;
+      Screen.screenColour = Colours.BLACK;
       Screen.clear();
       Screen.printAt(8, 4, "ASTROBLITZ");
       Screen.printAt(0, 6, "(C)1982 CREATIVE SOFTWARE");

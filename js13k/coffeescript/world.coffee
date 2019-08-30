@@ -16,12 +16,13 @@ class World
         @ground = @blockToPixelH(22)
         @height = @ground - @sky
         @items = []
+        @levelEnded = false
 
         @playerShots = new ItemPool(PlayerShot, 10)
         @enemyShots = new ItemPool(EnemyShot, 200)
         @particles = new ItemPool(Particle, 2000)
 
-        @generate()
+        @generate(@level)
 
     blockToPixelH: (block) ->
         block * 8 * Screen.pixelH
@@ -30,13 +31,18 @@ class World
         block * 8 * Screen.pixelW
 
 
-    generate: ->
+    generate: (levelNo) ->
+        @levelEnded = false
+        @items = []
+        item.dead = true for item in @playerShots.pool
+        item.dead = true for item in @enemyShots.pool
+        item.dead = true for item in @particles.pool
         # TODO: generate different world for each level
-        for i in [0..5]
+        for i in [0..randInt(3)+4]
             @items.push new Building(randInt(@spawnWidth), @ground)
-        for i in [0..5]
+        for i in [0..(4 + levelNo)]
             @items.push new Radar(randInt(@spawnWidth), @ground)
-        for i in [0..10]
+        for i in [0..(5 + 2 * levelNo)]
             @items.push new UFO(randInt(@spawnWidth), randInt(@blockToPixelH(11)) + @blockToPixelH(4.5))
 
     getNextPlayerShot: ->
@@ -49,7 +55,7 @@ class World
         @particles.getNextItem().fire(x, y, directionRad, speed, colour)
 
     update: (delta) ->
-        unless @ship.dead
+        unless @ship.dead || @ship.autopilot || @ship.warping
             if keysDown.right
                 @ship.moveH(delta, 1)
             else if keysDown.left
@@ -63,6 +69,10 @@ class World
             if keysDown.fire
                 @ship.fireShot()
 
+        if @ship.warping
+            @ship.moveH(delta, 1)
+            @ship.moveV(delta, 1)
+
         rhs = @ship.x + @halfWidth
         lhs = @ship.x - @halfWidth
         for item in @playerShots.pool
@@ -73,9 +83,9 @@ class World
             @updateItem(item, delta, rhs, lhs)
         for item in @particles.pool
             @updateItem(item, delta, rhs, lhs)
-        unless @ship.dead
+        unless @ship.dead || @ship.autopilot || @ship.warping
             @seeIfEnemyHit()
-            @seeIfPlayerHit()
+            @seeIfPlayerHit() unless @ship.invulnerable
 
     updateItem: (item, delta, rhs, lhs) ->
         return if item.dead
@@ -102,7 +112,10 @@ class World
             @drawItem(item, offsetX)
         for item in @particles.pool
             @drawItem(item, offsetX)
+        if @ship.invulnerable
+            @ctx.globalAlpha = 0.5
         @drawItem(@ship, offsetX)
+        @ctx.globalAlpha = 1.0
 #        @ship.draw(offsetX) unless @ship.dead
         @drawRadar()
 
@@ -174,13 +187,7 @@ class World
     playerDies: (hitPointX, hitPointY) ->
         hitPoint = {x: hitPointX - @ship.x, y: hitPointY - @ship.y}
         @explodeSprite(@ship, hitPoint, 1)
-#        @ship.dead = true
-        Game.livesLeft -= 1
-        if Game.livesLeft == 0
-            @ship.dead = true
-            Game.state = GameStates.GAME_OVER
-        else
-            @ship.y = 8 * 12 * Screen.pixelH
+        Game.respawnPlayer()
 
     enemyDies: (enemy, hitPointX, hitPointY) ->
         hitPoint = {x: hitPointX - enemy.x, y: hitPointY - enemy.y}

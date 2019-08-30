@@ -1,5 +1,6 @@
 let charBytes = []
 for (let i=0; i< 128; i++) {
+    // fill with checkerboard pattern so I can easily see if I've missed one
     charBytes[i] = [178,85,178,85,178,85,178,85]
 }
 
