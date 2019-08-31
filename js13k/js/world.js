@@ -297,6 +297,9 @@
 
     World.prototype.playerDies = function(hitPointX, hitPointY) {
       var hitPoint;
+      if (this.ship.dead) {
+        return;
+      }
       hitPoint = {
         x: hitPointX - this.ship.x,
         y: hitPointY - this.ship.y

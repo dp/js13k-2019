@@ -37,7 +37,6 @@ class World
         item.dead = true for item in @playerShots.pool
         item.dead = true for item in @enemyShots.pool
         item.dead = true for item in @particles.pool
-        # TODO: generate different world for each level
         for i in [0..randInt(3)+4]
             @items.push new Building(randInt(@spawnWidth), @ground)
         for i in [0..(4 + levelNo)]
@@ -199,6 +198,7 @@ class World
             pointY < item.y + item.hitbox.bottom
 
     playerDies: (hitPointX, hitPointY) ->
+        return if @ship.dead
         hitPoint = {x: hitPointX - @ship.x, y: hitPointY - @ship.y}
         @explodeSprite(@ship, hitPoint, 1)
         Game.respawnPlayer()
