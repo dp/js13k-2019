@@ -31,9 +31,9 @@ Game =
         @lastTimestamp = timestamp
         @cooldown -= delta
 
-        if @state != @lastState
-            console.log 'Changed state to ', @state
-            @lastState = @state
+#        if @state != @lastState
+#            console.log 'Changed state to ', @state
+#            @lastState = @state
 
         if @state == GameStates.TITLE_SCREEN
             if keysDown.fire && @cooldown <= 0

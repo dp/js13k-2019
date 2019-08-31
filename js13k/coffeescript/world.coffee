@@ -42,8 +42,13 @@ class World
             @items.push new Building(randInt(@spawnWidth), @ground)
         for i in [0..(4 + levelNo)]
             @items.push new Radar(randInt(@spawnWidth), @ground)
-        for i in [0..(5 + 2 * levelNo)]
+        for i in [0.. (5 + 2 * levelNo)]
             @items.push new UFO(randInt(@spawnWidth), randInt(@blockToPixelH(11)) + @blockToPixelH(4.5))
+        if levelNo > 2
+            for i in [0.. (2 * levelNo)]
+                @items.push new Mine(randInt(@spawnWidth), randInt(@blockToPixelH(11)) + @blockToPixelH(4.5))
+        @guppies = levelNo > 1
+        @nextGuppieSpawn = 30
 
     getNextPlayerShot: ->
         @playerShots.getNextItem()
@@ -54,7 +59,16 @@ class World
     addParticle: (x, y, directionRad, speed, colour) ->
         @particles.getNextItem().fire(x, y, directionRad, speed, colour)
 
+    spawnGuppie: ->
+        @nextGuppieSpawn = 30
+        @items.push new Guppie(@ship.x + @spawnWidth / 2)
+
     update: (delta) ->
+        if @guppies
+            @nextGuppieSpawn -= delta
+            if @nextGuppieSpawn < 0
+                @spawnGuppie()
+
         unless @ship.dead || @ship.autopilot || @ship.warping
             if keysDown.right
                 @ship.moveH(delta, 1)
@@ -192,13 +206,14 @@ class World
     enemyDies: (enemy, hitPointX, hitPointY) ->
         hitPoint = {x: hitPointX - enemy.x, y: hitPointY - enemy.y}
         @explodeSprite(enemy, hitPoint, 1)
+        enemy.onExplode()
         enemy.dead = true
         Game.score += enemy.points
         enemiesRemaining = 0
         for item in @items
             if !item.dead && item.canBeDestroyed
                 enemiesRemaining += 1
-        console.log {enemiesRemaining}
+#        console.log {enemiesRemaining}
         if enemiesRemaining == 0
             Game.warpToNextWorld()
 

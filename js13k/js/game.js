@@ -36,10 +36,6 @@
       }
       this.lastTimestamp = timestamp;
       this.cooldown -= delta;
-      if (this.state !== this.lastState) {
-        console.log('Changed state to ', this.state);
-        this.lastState = this.state;
-      }
       if (this.state === GameStates.TITLE_SCREEN) {
         if (keysDown.fire && this.cooldown <= 0) {
           this.startGame();

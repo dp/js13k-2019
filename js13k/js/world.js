@@ -33,7 +33,7 @@
     };
 
     World.prototype.generate = function(levelNo) {
-      var i, item, j, k, l, len, len1, len2, m, n, o, ref, ref1, ref2, ref3, ref4, ref5, results;
+      var i, item, j, k, l, len, len1, len2, m, n, o, p, ref, ref1, ref2, ref3, ref4, ref5, ref6;
       this.levelEnded = false;
       this.items = [];
       ref = this.playerShots.pool;
@@ -57,11 +57,16 @@
       for (i = n = 0, ref4 = 4 + levelNo; 0 <= ref4 ? n <= ref4 : n >= ref4; i = 0 <= ref4 ? ++n : --n) {
         this.items.push(new Radar(randInt(this.spawnWidth), this.ground));
       }
-      results = [];
       for (i = o = 0, ref5 = 5 + 2 * levelNo; 0 <= ref5 ? o <= ref5 : o >= ref5; i = 0 <= ref5 ? ++o : --o) {
-        results.push(this.items.push(new UFO(randInt(this.spawnWidth), randInt(this.blockToPixelH(11)) + this.blockToPixelH(4.5))));
+        this.items.push(new UFO(randInt(this.spawnWidth), randInt(this.blockToPixelH(11)) + this.blockToPixelH(4.5)));
       }
-      return results;
+      if (levelNo > 2) {
+        for (i = p = 0, ref6 = 2 * levelNo; 0 <= ref6 ? p <= ref6 : p >= ref6; i = 0 <= ref6 ? ++p : --p) {
+          this.items.push(new Mine(randInt(this.spawnWidth), randInt(this.blockToPixelH(11)) + this.blockToPixelH(4.5)));
+        }
+      }
+      this.guppies = levelNo > 1;
+      return this.nextGuppieSpawn = 30;
     };
 
     World.prototype.getNextPlayerShot = function() {
@@ -76,8 +81,19 @@
       return this.particles.getNextItem().fire(x, y, directionRad, speed, colour);
     };
 
+    World.prototype.spawnGuppie = function() {
+      this.nextGuppieSpawn = 30;
+      return this.items.push(new Guppie(this.ship.x + this.spawnWidth / 2));
+    };
+
     World.prototype.update = function(delta) {
       var item, j, k, l, len, len1, len2, len3, lhs, m, ref, ref1, ref2, ref3, rhs;
+      if (this.guppies) {
+        this.nextGuppieSpawn -= delta;
+        if (this.nextGuppieSpawn < 0) {
+          this.spawnGuppie();
+        }
+      }
       if (!(this.ship.dead || this.ship.autopilot || this.ship.warping)) {
         if (keysDown.right) {
           this.ship.moveH(delta, 1);
@@ -296,6 +312,7 @@
         y: hitPointY - enemy.y
       };
       this.explodeSprite(enemy, hitPoint, 1);
+      enemy.onExplode();
       enemy.dead = true;
       Game.score += enemy.points;
       enemiesRemaining = 0;
@@ -306,9 +323,6 @@
           enemiesRemaining += 1;
         }
       }
-      console.log({
-        enemiesRemaining: enemiesRemaining
-      });
       if (enemiesRemaining === 0) {
         return Game.warpToNextWorld();
       }

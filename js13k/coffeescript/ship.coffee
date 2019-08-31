@@ -11,14 +11,14 @@ class Ship
         @vSpeed = 100 * Screen.pixelH
         @hSpeed = 150 * Screen.pixelW
         @minY = 18 * Screen.pixelH
-        @maxY = 168 * Screen.pixelH
+        @maxY = 165 * Screen.pixelH
         @offScreen = false
         @dead = false
         @autopilot = false
         @invulnerable = false
         @warping = false
         @cooldown = 0.3
-        @hitbox = buildHitbox(@offsetX, @offsetY, 0, 0, 32, 13)
+        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 4, 30, 12)
 
     update: (delta) ->
         if @cooldown > 0
@@ -75,7 +75,7 @@ class PlayerShot
         @offsetX = @w / -2
         @offsetY = @h / -2
         @dead = true
-        @hitbox = buildHitbox(@offsetX, @offsetY, 0, 1, 16, 4)
+        @hitbox = buildHitbox(@offsetX, @offsetY, 0, -1, 14, 6)
 
     fire: (@x, @y, @hSpeed) ->
         @dead = false

@@ -1,37 +1,38 @@
-class Building
+class Building extends Enemy
     constructor: (@x, @y) ->
         @sprite = sprites.building
-        @w = @sprite.imageW
-        @h = @sprite.imageH
-        @offsetX = @w / -2
+
+        super
+
         @offsetY = -@h
         @canBeDestroyed = false
-        @hitbox = buildHitbox(@offsetX, @offsetY, 0, 0, 14, 32)
+        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 3, 13, 32)
 
 
-    draw: (cameraOffsetX) ->
-        @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, false)
 
-    update: (delta) ->
-        true
+class Mine extends Enemy
+    constructor: (@x, @y) ->
+        @sprite = sprites.mine
+        super
+        @points = 100
+        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 1, 15, 15)
+
+    onExplode: ->
+        shotSpeed = 50 * Screen.pixelD
+        for direction in [0, Math.PI, -Math.PI/2, Math.PI/2]
+            Game.world.getNextEnemyShot().fire(@x, @y, shotSpeed, direction)
 
 
-class Radar
+class Radar extends Enemy
     constructor: (@x, @y) ->
         @sprite = sprites.radar
-        @w = @sprite.imageW
-        @h = @sprite.imageH
-        @offsetX = @w / -2
+        super
         @offsetY = -@h
         @cooldown = Math.random() * 5
         @firePattern = [3, 0.5]
         @patternIndex = 0
-        @canBeDestroyed = true
         @points = 100
-        @hitbox = buildHitbox(@offsetX, @offsetY, 0, 0, 16, 16)
-
-    draw: (cameraOffsetX) ->
-        @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, false)
+        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 2, 15, 16)
 
     update: (delta) ->
         @cooldown -= delta
@@ -49,4 +50,5 @@ class Radar
 
 
 window.Building = Building
+window.Mine = Mine
 window.Radar = Radar

@@ -15,14 +15,14 @@
       this.vSpeed = 100 * Screen.pixelH;
       this.hSpeed = 150 * Screen.pixelW;
       this.minY = 18 * Screen.pixelH;
-      this.maxY = 168 * Screen.pixelH;
+      this.maxY = 165 * Screen.pixelH;
       this.offScreen = false;
       this.dead = false;
       this.autopilot = false;
       this.invulnerable = false;
       this.warping = false;
       this.cooldown = 0.3;
-      this.hitbox = buildHitbox(this.offsetX, this.offsetY, 0, 0, 32, 13);
+      this.hitbox = buildHitbox(this.offsetX, this.offsetY, 1, 4, 30, 12);
     }
 
     Ship.prototype.update = function(delta) {
@@ -99,7 +99,7 @@
       this.offsetX = this.w / -2;
       this.offsetY = this.h / -2;
       this.dead = true;
-      this.hitbox = buildHitbox(this.offsetX, this.offsetY, 0, 1, 16, 4);
+      this.hitbox = buildHitbox(this.offsetX, this.offsetY, 0, -1, 14, 6);
     }
 
     PlayerShot.prototype.fire = function(x, y, hSpeed) {
