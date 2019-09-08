@@ -172,8 +172,8 @@
       Screen.screenColour = Colours.BLACK;
       Screen.textColour = Colours.WHITE;
       Screen.clear();
-      Screen.printAt(9, 4, "JS BLITZ");
-      Screen.printAt(0, 6, "(C)1982 CREATIVE SOFTWARE");
+      Screen.printAt(8, 4, "JS BLITZ");
+      Screen.printAt(0, 6, "COME WITH ME, BACK TO '83");
       this.hLine(7);
       Screen.printAt(15, 9, "50");
       Screen.printAt(15, 12, "50");
@@ -200,14 +200,14 @@
       Screen.screenColour = Colours.BLACK;
       Screen.setBorder(Colours.BLACK);
       Screen.clear();
-      Typer.display(['c:GREEN', 't:', 't:   **  TOP  SECRET  **', 't:', 't:Pilot,', 't:', "t:You've infiltrated       The Foundation's secret  research base and stolen their next gen fighter.", 't:', "t:Now you'll need to fight your way past their      defences on the five     outer moons, back to our ship waiting in deep     space.", 't:', 't:Fly well,', 't:The rebellion depends on you.', 'd: ', 'd:', 'c:BLUE', 'd:       Press SPACE']);
+      Typer.display(['c:GREEN', 't:', 't: ** INCOMING  MESSAGE **', 't:', 't:Pilot,', 't:', "t:You've infiltrated       The Foundation's secret  research base and stolen their next gen fighter.", 't:', "t:Now you'll need to fight your way past their      defences on the five     outer moons, back to our ship waiting in deep     space.", 't:', 't:Fly well,', 't:The rebellion depends on you.', 'd: ', 'd:', 'c:BLUE', 'd:       Press SPACE']);
       return requestAnimationFrame(update);
     },
     showEnding: function() {
       Screen.screenColour = Colours.BLACK;
       Screen.setBorder(Colours.BLACK);
       Screen.clear();
-      return Typer.display(['c:GREEN', 't:', 't: ** INCOMING  MESSAGE **', 't:', 't:Awesome skill, Pilot!', 't:', 't:The technology in this   ship will be invaluable  in our fight against     The Foundation and their evil plans.', 't:', 't:Well done.', 't:', 't:', 'c:YELLOW', 't:   Score       ' + ('' + this.score).padStart(5, ' '), 't:   Kills       ' + ('' + this.kills).padStart(5, ' '), 't:   Shots fired ' + ('' + this.shotsFired).padStart(5, ' '), 't:   Accuracy    ' + ((this.kills / this.shotsFired * 100).toFixed(1) + '%').padStart(6, ' '), 't:', 'c:BLUE', 't:       Press SPACE', 'p:1']);
+      return Typer.display(['c:GREEN', 't:', 't: ** INCOMING  MESSAGE **', 't:', 't:Awesome skill, Pilot!', 't:', 't:The technology in this   ship will be invaluable  in our fight against     The Foundation and their evil schemes.', 't:', 't:Well done.', 't:', 't:', 'c:YELLOW', 't:   Score       ' + ('' + this.score).padStart(5, ' '), 't:   Kills       ' + ('' + this.kills).padStart(5, ' '), 't:   Shots fired ' + ('' + this.shotsFired).padStart(5, ' '), 't:   Accuracy    ' + ((this.kills / this.shotsFired * 100).toFixed(1) + '%').padStart(6, ' '), 't:', 'c:BLUE', 't:       Press SPACE', 'p:1']);
     }
   };
 

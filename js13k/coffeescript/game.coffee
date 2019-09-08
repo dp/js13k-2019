@@ -171,9 +171,9 @@ Game =
         Screen.screenColour = Colours.BLACK
         Screen.textColour = Colours.WHITE
         Screen.clear()
-        Screen.printAt 9, 4, "JS BLITZ"
+        Screen.printAt 8, 4, "JS BLITZ"
         #        @hLine(5)
-        Screen.printAt 0, 6, "(C)1982 CREATIVE SOFTWARE"
+        Screen.printAt 0, 6, "COME WITH ME, BACK TO '83"
         @hLine(7)
 
         Screen.printAt 15, 9, "50"
@@ -209,7 +209,7 @@ Game =
             #  |23456789012|123456789012|23456789012|123456789012|23456789012|123456789012
             'c:GREEN'
             't:'
-            't:   **  TOP  SECRET  **'
+            't: ** INCOMING  MESSAGE **'
             't:'
             't:Pilot,'
             't:'
@@ -238,7 +238,7 @@ Game =
             't:'
             't:Awesome skill, Pilot!'
             't:'
-            't:The technology in this   ship will be invaluable  in our fight against     The Foundation and their evil plans.'
+            't:The technology in this   ship will be invaluable  in our fight against     The Foundation and their evil schemes.'
             't:'
             't:Well done.'
             't:'
