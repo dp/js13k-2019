@@ -7,9 +7,11 @@
     TITLE_SCREEN: 'TITLE_SCREEN',
     PLAYING_IN_PLAY: 'PLAYING_IN_PLAY',
     PLAYING_WARPING: 'PLAYING_WARPING',
+    PLAYING_WARPING_WIN: 'PLAYING_WARPING_WIN',
     START_OF_LEVEL: 'START_OF_LEVEL',
     PLAYING_SPAWNING: 'PLAYING_SPAWNING',
-    GAME_OVER: 'GAME_OVER'
+    GAME_OVER: 'GAME_OVER',
+    PLAYER_WINS: 'PLAYER_WINS'
   };
 
   Game = {
@@ -19,13 +21,8 @@
       this.canvas = Screen.canvas;
       this.cooldown = 0;
       Screen.setSize(25, 23);
-      Screen.screenColour = Colours.BLACK;
-      Screen.textColour = Colours.WHITE;
-      Screen.setBorder(Colours.BLUE);
-      Cursor.hide();
       addChars(48, astroDigits);
-      this.showTitleScreen();
-      return requestAnimationFrame(update);
+      return this.showStory();
     },
     update: function(timestamp) {
       var delta;
@@ -36,12 +33,17 @@
       }
       this.lastTimestamp = timestamp;
       this.cooldown -= delta;
-      if (this.state === GameStates.TITLE_SCREEN) {
+      if (this.state === GameStates.PRE_LAUNCH) {
+        if (keysDown.fire && this.cooldown <= 0) {
+          this.cooldown = 0.5;
+          this.showTitleScreen();
+        }
+      } else if (this.state === GameStates.TITLE_SCREEN) {
         if (keysDown.fire && this.cooldown <= 0) {
           this.startGame();
         }
       } else {
-        if (this.state === GameStates.GAME_OVER) {
+        if (this.state === GameStates.GAME_OVER || this.state === GameStates.PLAYER_WINS) {
           if (keysDown.fire && this.cooldown <= 0) {
             this.state = GameStates.TITLE_SCREEN;
             this.cooldown = 1;
@@ -67,9 +69,15 @@
             this.level += 1;
             this.world.generate(this.level);
           }
+        } else if (this.state === GameStates.PLAYING_WARPING_WIN) {
+          if (this.cooldown < 0) {
+            this.state = GameStates.PLAYER_WINS;
+            this.cooldown = 1;
+            this.showEnding();
+          }
         }
       }
-      if (this.state !== GameStates.TITLE_SCREEN) {
+      if (!(this.state === GameStates.TITLE_SCREEN || this.state === GameStates.PRE_LAUNCH || this.state === GameStates.PLAYER_WINS)) {
         this.world.update(delta);
         return this.draw();
       }
@@ -83,6 +91,14 @@
         levelText = this.world.levelEnded ? this.level : this.level - 1;
         Screen.printAt(5, 8, "LEVEL " + levelText + " CLEARED");
         Screen.printAt(8, 10, 'WARPING ...');
+        Screen.textColour = Colours.BLUE;
+      } else if (this.state === GameStates.PLAYING_WARPING_WIN) {
+        Screen.screenColour = Colours.GREEN;
+        Screen.clear();
+        Screen.textColour = Colours.WHITE;
+        Screen.printAt(3, 8, "MISSION SUCCESSFUL!");
+        Screen.printAt(7, 10, 'WARPING TO');
+        Screen.printAt(3, 11, 'RENDEZVOUS POINT...');
         Screen.textColour = Colours.BLUE;
       } else {
         this.ctx.fillStyle = Colours.BLACK;
@@ -110,14 +126,21 @@
       Screen.clear();
       Screen.printAt(8, 4, "Playing ...");
       this.score = 0;
+      this.kills = 0;
+      this.shotsFired = 0;
       this.livesLeft = 4;
       this.level = 1;
       this.ship = new Ship();
       this.world = new World(1, this.ship);
+      this.ship.y = this.world.blockToPixelH(13);
       return this.cooldown = 2;
     },
     warpToNextWorld: function() {
-      this.state = GameStates.PLAYING_WARPING;
+      if (this.level === 5) {
+        this.state = GameStates.PLAYING_WARPING_WIN;
+      } else {
+        this.state = GameStates.PLAYING_WARPING;
+      }
       this.cooldown = 5;
       this.ship.warping = true;
       return this.world.levelEnded = true;
@@ -142,10 +165,14 @@
       return Screen.printAt(0, row, ';;;;;;;;;;;;;;;;;;;;;;;;;');
     },
     showTitleScreen: function() {
+      Typer.clear();
       this.state = GameStates.TITLE_SCREEN;
+      Cursor.hide();
+      Screen.setBorder(Colours.BLUE);
       Screen.screenColour = Colours.BLACK;
+      Screen.textColour = Colours.WHITE;
       Screen.clear();
-      Screen.printAt(8, 4, "ASTROBLITZ");
+      Screen.printAt(9, 4, "JS BLITZ");
       Screen.printAt(0, 6, "(C)1982 CREATIVE SOFTWARE");
       this.hLine(7);
       Screen.printAt(15, 9, "50");
@@ -160,7 +187,7 @@
       Screen.textColour = Colours.YELLOW;
       Screen.printAt(3, 21, 'PRESS SPACE TO START');
       Screen.textColour = Colours.CYAN;
-      Screen.printAt(1, 11, "^ _ $ %");
+      Screen.printAt(1, 11, "^ _ $ &");
       Screen.printAt(1, 13, "W A S D");
       Screen.printAt(1, 17, "SPACE");
       Screen.textColour = Colours.BLUE;
@@ -168,6 +195,19 @@
       Screen.drawSprite(96, 88, radar);
       Screen.drawSprite(96, 112, mine);
       return Screen.drawSprite(96, 140, guppie);
+    },
+    showStory: function() {
+      Screen.screenColour = Colours.BLACK;
+      Screen.setBorder(Colours.BLACK);
+      Screen.clear();
+      Typer.display(['c:GREEN', 't:', 't:   **  TOP  SECRET  **', 't:', 't:Pilot,', 't:', "t:You've infiltrated       The Foundation's secret  research base and stolen their next gen fighter.", 't:', "t:Now you'll need to fight your way past their      defences on the five     outer moons, back to our ship waiting in deep     space.", 't:', 't:Fly well,', 't:The rebellion depends on you.', 'd: ', 'd:', 'c:BLUE', 'd:       Press SPACE']);
+      return requestAnimationFrame(update);
+    },
+    showEnding: function() {
+      Screen.screenColour = Colours.BLACK;
+      Screen.setBorder(Colours.BLACK);
+      Screen.clear();
+      return Typer.display(['c:GREEN', 't:', 't: ** INCOMING  MESSAGE **', 't:', 't:Awesome skill, Pilot!', 't:', 't:The technology in this   ship will be invaluable  in our fight against     The Foundation and their evil plans.', 't:', 't:Well done.', 't:', 't:', 'c:YELLOW', 't:   Score       ' + ('' + this.score).padStart(5, ' '), 't:   Kills       ' + ('' + this.kills).padStart(5, ' '), 't:   Shots fired ' + ('' + this.shotsFired).padStart(5, ' '), 't:   Accuracy    ' + ((this.kills / this.shotsFired * 100).toFixed(1) + '%').padStart(6, ' '), 't:', 'c:BLUE', 't:       Press SPACE', 'p:1']);
     }
   };
 

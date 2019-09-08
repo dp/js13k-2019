@@ -46,7 +46,11 @@ Typer =
             setTimeout((=> Typer.execNextCommand()), 50)
 
 
-
+    clear: ->
+        @commands = []
+        @command = null
+        @commandText = ''
+        @callback = null
 
 window.Typer = Typer
 

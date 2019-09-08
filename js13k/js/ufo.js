@@ -21,7 +21,7 @@
 
     UFO.prototype.update = function(delta) {
       this.x += this.direction * this.hSpeed * delta;
-      this.y = this.base + Math.sin(this.x / 100) * 30;
+      this.y = this.base + Math.sin(this.x / 100) * 10 * Screen.pixelH;
       if (!this.offScreen && Math.random() > 0.99) {
         return this.fire();
       }

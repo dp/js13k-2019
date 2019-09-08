@@ -121,6 +121,25 @@ shot = '''
 .....x#
 '''
 
+snake = '''
+...##
+.#-##-
+.#----
+.#-----
+...----
+...-xx-
+...xxx--
+..xxxxx-
+..xxxxx-
+...xxx--
+...-xx-
+...----
+.#-----
+.#----
+.#-##-
+...##
+'''
+
 convert = (spriteChars, width) ->
     lines = spriteChars.split("\n")
     text = ''
@@ -146,5 +165,5 @@ convert = (spriteChars, width) ->
 #convert(guppie, 8)
 #console.log()
 #convert(mine, 8)
-convert(shot, 8)
+convert(snake, 8)
 

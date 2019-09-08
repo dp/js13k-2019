@@ -3,8 +3,8 @@
   var World;
 
   World = (function() {
-    function World(level, ship) {
-      this.level = level;
+    function World(level1, ship) {
+      this.level = level1;
       this.ship = ship;
       this.ctx = Screen.ctx;
       this.canvas = Screen.canvas;
@@ -32,8 +32,8 @@
       return block * 8 * Screen.pixelW;
     };
 
-    World.prototype.generate = function(levelNo) {
-      var i, item, j, k, l, len, len1, len2, m, n, o, p, ref, ref1, ref2, ref3, ref4, ref5, ref6;
+    World.prototype.generate = function(level) {
+      var buildings, guppies, i, item, j, k, l, len, len1, len2, m, mines, n, o, p, q, radars, ref, ref1, ref2, ref3, ref4, ref5, ref6, ref7, s, snakeStart, ufos;
       this.levelEnded = false;
       this.items = [];
       ref = this.playerShots.pool;
@@ -51,21 +51,60 @@
         item = ref2[l];
         item.dead = true;
       }
-      for (i = m = 0, ref3 = randInt(3) + 4; 0 <= ref3 ? m <= ref3 : m >= ref3; i = 0 <= ref3 ? ++m : --m) {
+      buildings = randInt(3) + 4;
+      if (level === 1) {
+        ufos = 5;
+        radars = 3;
+      } else if (level === 2) {
+        ufos = 8;
+        radars = 5;
+        mines = 0;
+        guppies = 0;
+      } else if (level === 3) {
+        ufos = 5;
+        radars = 5;
+        mines = 4;
+        guppies = 0;
+      } else if (level === 4) {
+        ufos = 3;
+        radars = 3;
+        mines = 0;
+        guppies = 10;
+      } else if (level === 5) {
+        ufos = 5;
+        radars = 3;
+        mines = 0;
+        guppies = 0;
+        snakeStart = this.ship.x + this.spawnWidth / 2;
+        for (i = m = 0; m <= 12; i = ++m) {
+          this.items.push(new Snake(snakeStart + i * 32 * Screen.pixelH, -1));
+          this.items.push(new Snake(snakeStart + i * 32 * Screen.pixelH, 1));
+        }
+      }
+      for (i = n = 0, ref3 = buildings; 0 <= ref3 ? n < ref3 : n > ref3; i = 0 <= ref3 ? ++n : --n) {
         this.items.push(new Building(randInt(this.spawnWidth), this.ground));
       }
-      for (i = n = 0, ref4 = 4 + levelNo; 0 <= ref4 ? n <= ref4 : n >= ref4; i = 0 <= ref4 ? ++n : --n) {
-        this.items.push(new Radar(randInt(this.spawnWidth), this.ground));
+      if (radars) {
+        for (i = o = 0, ref4 = radars; 0 <= ref4 ? o < ref4 : o > ref4; i = 0 <= ref4 ? ++o : --o) {
+          this.items.push(new Radar(randInt(this.spawnWidth), this.ground));
+        }
       }
-      for (i = o = 0, ref5 = 5 + 2 * levelNo; 0 <= ref5 ? o <= ref5 : o >= ref5; i = 0 <= ref5 ? ++o : --o) {
-        this.items.push(new UFO(randInt(this.spawnWidth), randInt(this.blockToPixelH(11)) + this.blockToPixelH(4.5)));
+      if (ufos) {
+        for (i = p = 0, ref5 = ufos; 0 <= ref5 ? p < ref5 : p > ref5; i = 0 <= ref5 ? ++p : --p) {
+          this.items.push(new UFO(randInt(this.spawnWidth), randInt(this.blockToPixelH(11)) + this.blockToPixelH(4.5)));
+        }
       }
-      if (levelNo > 2) {
-        for (i = p = 0, ref6 = 2 * levelNo; 0 <= ref6 ? p <= ref6 : p >= ref6; i = 0 <= ref6 ? ++p : --p) {
+      if (mines) {
+        for (i = q = 0, ref6 = mines; 0 <= ref6 ? q < ref6 : q > ref6; i = 0 <= ref6 ? ++q : --q) {
           this.items.push(new Mine(randInt(this.spawnWidth), randInt(this.blockToPixelH(11)) + this.blockToPixelH(4.5)));
         }
       }
-      this.guppies = levelNo > 1;
+      if (guppies) {
+        for (i = s = 0, ref7 = guppies; 0 <= ref7 ? s < ref7 : s > ref7; i = 0 <= ref7 ? ++s : --s) {
+          this.items.push(new Guppie(randInt(this.spawnWidth)));
+        }
+      }
+      this.guppies = level > 1;
       return this.nextGuppieSpawn = 30;
     };
 
@@ -267,7 +306,7 @@
               if (item.canBeDestroyed && !item.dead) {
                 if (this.hitboxesIntersect(shot, item)) {
                   shot.dead = true;
-                  results1.push(this.enemyDies(item, shot.x, shot.y));
+                  results1.push(this.enemyDies(item, shot.x, shot.y, shot.hSpeed));
                 } else {
                   results1.push(void 0);
                 }
@@ -308,16 +347,17 @@
       return Game.respawnPlayer();
     };
 
-    World.prototype.enemyDies = function(enemy, hitPointX, hitPointY) {
+    World.prototype.enemyDies = function(enemy, hitPointX, hitPointY, hitSpeed) {
       var enemiesRemaining, hitPoint, item, j, len, ref;
       hitPoint = {
         x: hitPointX - enemy.x,
         y: hitPointY - enemy.y
       };
-      this.explodeSprite(enemy, hitPoint, 1);
+      this.explodeSprite(enemy, hitPoint, hitSpeed);
       enemy.onExplode();
       enemy.dead = true;
       Game.score += enemy.points;
+      Game.kills += 1;
       enemiesRemaining = 0;
       ref = this.items;
       for (j = 0, len = ref.length; j < len; j++) {
@@ -332,11 +372,12 @@
     };
 
     World.prototype.explodeSprite = function(gameItem, point, direction) {
-      var a, b, g, height, imageData, j, offset, origin, pixel, r, ref, ref1, results, sprite, v1, width, x, y;
+      var a, b, dOffset, g, height, imageData, j, offset, origin, pixel, r, ref, ref1, results, sprite, v1, width, x, y;
       sprite = gameItem.sprite;
       imageData = sprite.getImageData(gameItem.facingLeft);
       width = sprite.imageW;
       height = sprite.imageH;
+      dOffset = direction > 0 ? 10 * Screen.pixelW : -10 * Screen.pixelW;
       origin = {
         x: 0,
         y: 0
@@ -357,7 +398,14 @@
                 x: x + gameItem.offsetX,
                 y: y + gameItem.offsetY
               };
-              v1 = Vectors.angleDistBetweenPoints(point, pixel);
+              if (Math.abs(point.y - pixel.y) < 3 * Screen.pixelH) {
+                v1 = Vectors.angleDistBetweenPoints(point, {
+                  x: (dOffset + pixel.x) * 15,
+                  y: pixel.y
+                });
+              } else {
+                v1 = Vectors.angleDistBetweenPoints(point, pixel);
+              }
               pixel.x += gameItem.x;
               pixel.y += gameItem.y;
               results1.push(this.addParticle(pixel.x, pixel.y, v1.angle, v1.distance / 2 + 300, {

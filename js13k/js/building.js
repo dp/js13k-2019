@@ -58,7 +58,7 @@
       this.sprite = sprites.radar;
       Radar.__super__.constructor.apply(this, arguments);
       this.offsetY = -this.h;
-      this.cooldown = Math.random() * 5;
+      this.cooldown = Math.random();
       this.firePattern = [3, 0.5];
       this.patternIndex = 0;
       this.points = 100;

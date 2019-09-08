@@ -8,8 +8,12 @@ class Ship
         @x = 100
         @y = 100
         @facingLeft = false
-        @vSpeed = 100 * Screen.pixelH
-        @hSpeed = 150 * Screen.pixelW
+        @maxVSpeed = 120 * Screen.pixelH
+        @maxHSpeed = 180 * Screen.pixelW
+        @vThrust = 3000
+        @hThrust = 3000
+        @vSpeed = 0
+        @hSpeed = 0
         @minY = 18 * Screen.pixelH
         @maxY = 165 * Screen.pixelH
         @offScreen = false
@@ -26,6 +30,19 @@ class Ship
             @cooldown -= delta
             if @cooldown < 0
                 @cooldown = 0
+        unless @warping
+            @y += @vSpeed * delta
+            if @y < @minY then @y = @minY
+            if @y > @maxY then @y = @maxY
+            @x += @hSpeed * delta
+            # very high braking if user not actively moving
+            unless @movingV
+                @vSpeed *= 0.8
+            unless @movingH
+                @hSpeed *= 0.8
+        @movingV = false
+        @movingH = false
+
 
     draw: (cameraOffsetX) ->
         @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, @facingLeft)
@@ -41,29 +58,37 @@ class Ship
             else
                 @y += 1
         else
-            @y += direction * delta * @vSpeed
-            if @y < @minY then @y = @minY
-            if @y > @maxY then @y = @maxY
+            @vSpeed += @vThrust * delta * direction
+            if @vSpeed > @maxVSpeed then @vSpeed = @maxVSpeed
+            else if @vSpeed < -@maxVSpeed then @vSpeed = -@maxVSpeed
+            @movingV = true
 
 
     moveH: (delta, direction) ->
         if @warping
-            @x += delta * @hSpeed * 5
+            @x += delta * @maxHSpeed * 5
         else
-            @x += direction * delta * @hSpeed
+            @hSpeed += @hThrust * delta * direction
+            if @hSpeed > @maxHSpeed then @hSpeed = @maxHSpeed
+            else if @hSpeed < -@maxHSpeed then @hSpeed = -@maxHSpeed
+            @movingH = true
         @facingLeft = direction < 0
+
+    switchDirection: ->
+        @facingLeft = !@facingLeft
 
     fireShot: ->
         return if @warping
         if @cooldown > 0
             return
-        shotSpeed = 200 * Screen.pixelW
+        shotSpeed = 250 * Screen.pixelW
         shotOffset = 14 * Screen.pixelW
         if @facingLeft
             shotSpeed *= -1
             shotOffset *= -1
 
         Game.world.getNextPlayerShot().fire(@x + shotOffset, @y + 2 * Screen.pixelH, shotSpeed)
+        Game.shotsFired += 1
         @cooldown = 0.2
 
 
@@ -75,7 +100,7 @@ class PlayerShot
         @offsetX = @w / -2
         @offsetY = @h / -2
         @dead = true
-        @hitbox = buildHitbox(@offsetX, @offsetY, 0, -1, 14, 6)
+        @hitbox = buildHitbox(@offsetX, @offsetY, 2, -4, 14, 6)
 
     fire: (@x, @y, @hSpeed) ->
         @dead = false

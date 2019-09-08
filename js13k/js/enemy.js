@@ -8,7 +8,7 @@
       this.h = this.sprite.imageH;
       this.offsetX = this.w / -2;
       this.offsetY = this.h / -2;
-      this.direction = Math.random() > 0.5 ? 1 : -1;
+      this.direction || (this.direction = Math.random() > 0.5 ? 1 : -1);
       this.facingLeft = this.direction < 0;
       this.canBeDestroyed = true;
     }

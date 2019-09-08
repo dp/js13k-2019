@@ -31,22 +31,56 @@ class World
         block * 8 * Screen.pixelW
 
 
-    generate: (levelNo) ->
+    generate: (level) ->
         @levelEnded = false
         @items = []
         item.dead = true for item in @playerShots.pool
         item.dead = true for item in @enemyShots.pool
         item.dead = true for item in @particles.pool
-        for i in [0..randInt(3)+4]
+        buildings = randInt(3)+4
+        if level == 1
+            ufos = 5
+            radars = 3
+        else if level == 2
+            ufos = 8
+            radars = 5
+            mines = 0
+            guppies = 0
+        else if level == 3
+            ufos = 5
+            radars = 5
+            mines = 4
+            guppies = 0
+        else if level == 4
+            ufos = 3
+            radars = 3
+            mines = 0
+            guppies = 10
+        else if level == 5
+            ufos = 5
+            radars = 3
+            mines = 0
+            guppies = 0
+            snakeStart = @ship.x + @spawnWidth / 2
+            for i in [0.. 12]
+                @items.push new Snake(snakeStart + i * 32 * Screen.pixelH, -1)
+                @items.push new Snake(snakeStart + i * 32 * Screen.pixelH, 1)
+
+        for i in [0...buildings]
             @items.push new Building(randInt(@spawnWidth), @ground)
-        for i in [0..(4 + levelNo)]
-            @items.push new Radar(randInt(@spawnWidth), @ground)
-        for i in [0.. (5 + 2 * levelNo)]
-            @items.push new UFO(randInt(@spawnWidth), randInt(@blockToPixelH(11)) + @blockToPixelH(4.5))
-        if levelNo > 2
-            for i in [0.. (2 * levelNo)]
+        if radars
+            for i in [0...radars]
+                @items.push new Radar(randInt(@spawnWidth), @ground)
+        if ufos
+            for i in [0...ufos]
+                @items.push new UFO(randInt(@spawnWidth), randInt(@blockToPixelH(11)) + @blockToPixelH(4.5))
+        if mines
+            for i in [0...mines]
                 @items.push new Mine(randInt(@spawnWidth), randInt(@blockToPixelH(11)) + @blockToPixelH(4.5))
-        @guppies = levelNo > 1
+        if guppies
+            for i in [0...guppies]
+                @items.push new Guppie(randInt(@spawnWidth))
+        @guppies = level > 1
         @nextGuppieSpawn = 30
 
     getNextPlayerShot: ->
@@ -77,6 +111,10 @@ class World
                 @ship.moveV(delta, -1)
             else if keysDown.down
                 @ship.moveV(delta, 1)
+#            if keysDown.shift
+#                @ship.switchDirection()
+#                window.keysDown.shift = false
+#
 
             @ship.update(delta)
             if keysDown.fire
@@ -171,7 +209,7 @@ class World
                     if item.canBeDestroyed && !item.dead
                         if @hitboxesIntersect(shot, item)
                             shot.dead = true
-                            @enemyDies(item, shot.x, shot.y)
+                            @enemyDies(item, shot.x, shot.y, shot.hSpeed)
 
 
     hitboxesIntersect: (item1, item2) ->
@@ -203,12 +241,14 @@ class World
         @explodeSprite(@ship, hitPoint, 1)
         Game.respawnPlayer()
 
-    enemyDies: (enemy, hitPointX, hitPointY) ->
+    enemyDies: (enemy, hitPointX, hitPointY, hitSpeed) ->
+        # hitSpeed +ve if travelling right, -ve for left
         hitPoint = {x: hitPointX - enemy.x, y: hitPointY - enemy.y}
-        @explodeSprite(enemy, hitPoint, 1)
+        @explodeSprite(enemy, hitPoint, hitSpeed)
         enemy.onExplode()
         enemy.dead = true
         Game.score += enemy.points
+        Game.kills += 1
         enemiesRemaining = 0
         for item in @items
             if !item.dead && item.canBeDestroyed
@@ -222,8 +262,12 @@ class World
         imageData = sprite.getImageData(gameItem.facingLeft)
         width = sprite.imageW
         height = sprite.imageH
+        dOffset = if direction > 0 # gameItem.x + gameItem.offsetX > point.x
+                    10 * Screen.pixelW
+                else
+                    -10 * Screen.pixelW
         origin = {x:0, y:0}
-#        console.log point, origin
+#        console.log gameItem.x, gameItem.y, point.x, point.y, gameItem.offsetX
         for y in [0...height] by Screen.pixelH
             for x in [0...width] by Screen.pixelW
                 offset =  y * (width * 4) + x * 4
@@ -233,7 +277,11 @@ class World
                 a = imageData[offset + 3]
                 if a > 0
                     pixel = {x:x + gameItem.offsetX, y:y + gameItem.offsetY}
-                    v1 = Vectors.angleDistBetweenPoints point, pixel
+                    if Math.abs(point.y - pixel.y) < 3 * Screen.pixelH
+                        v1 = Vectors.angleDistBetweenPoints point, {x: (dOffset + pixel.x) * 15, y: pixel.y}
+                    else
+                        v1 = Vectors.angleDistBetweenPoints point, pixel
+                    #want pixels horizontal with shot to explode out much more as shot follow-through
 #                    v2 = Vectors.angleDistBetweenPoints origin, pixel
 #                    v1.distance = 250
 #                    v2 = Vectors.addVectors v1.angle, v1.distance, direction, 100

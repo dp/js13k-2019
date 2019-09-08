@@ -4,7 +4,7 @@ class Enemy
         @h = @sprite.imageH
         @offsetX = @w / -2
         @offsetY = @h / -2
-        @direction = if Math.random() > 0.5 then 1 else -1
+        @direction ||= if Math.random() > 0.5 then 1 else -1
         @facingLeft = @direction < 0
         @canBeDestroyed = true
 

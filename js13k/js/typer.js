@@ -80,6 +80,12 @@
           };
         })(this)), 50);
       }
+    },
+    clear: function() {
+      this.commands = [];
+      this.command = null;
+      this.commandText = '';
+      return this.callback = null;
     }
   };
 

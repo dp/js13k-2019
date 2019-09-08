@@ -140,24 +140,6 @@ const enemyShot = `
 01
 01
 `
-const snake = `
-03c0
-3be0
-3aa0
-3aa8
-02a8
-0258
-015a
-0556
-0556
-015a
-0258
-02a8
-3aa8
-3aa0
-3be0
-03c0
-`
 
 function addChars(startPos, charData) {
     let chars = charData.trim()
@@ -179,8 +161,8 @@ addChars(32, `
 2424240000000000
 24247e247e242400
 080808082a1c0800
-0062640810264600
 00000804fe040800
+304848304a443a00
 0408100000000000
 0408101010080400
 2010080808102000
@@ -304,8 +286,7 @@ function initSprites() {
         ufo: new Sprite(ufo, 8, 9, colours),
         ship: new Sprite(ship, 16, 13, colours),
         playerShot: new Sprite(playerShot, 8, 4, colours), //[Colours.BLUE, Colours.PURPLE, Colours.CYAN])
-        enemyShot: new Sprite(enemyShot, 4, 2, [Colours.CYAN]), //[Colours.BLUE, Colours.PURPLE, Colours.CYAN])
-        snake: new Sprite(snake, 8, 16, colours) // [Colours.YELLOW, Colours.BLUE, Colours.RED])
+        enemyShot: new Sprite(enemyShot, 4, 2, [Colours.CYAN]) //[Colours.BLUE, Colours.PURPLE, Colours.CYAN])
     }
 }
 function randInt(range) {

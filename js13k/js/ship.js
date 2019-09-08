@@ -12,8 +12,12 @@
       this.x = 100;
       this.y = 100;
       this.facingLeft = false;
-      this.vSpeed = 100 * Screen.pixelH;
-      this.hSpeed = 150 * Screen.pixelW;
+      this.maxVSpeed = 120 * Screen.pixelH;
+      this.maxHSpeed = 180 * Screen.pixelW;
+      this.vThrust = 3000;
+      this.hThrust = 3000;
+      this.vSpeed = 0;
+      this.hSpeed = 0;
       this.minY = 18 * Screen.pixelH;
       this.maxY = 165 * Screen.pixelH;
       this.offScreen = false;
@@ -29,9 +33,27 @@
       if (this.cooldown > 0) {
         this.cooldown -= delta;
         if (this.cooldown < 0) {
-          return this.cooldown = 0;
+          this.cooldown = 0;
         }
       }
+      if (!this.warping) {
+        this.y += this.vSpeed * delta;
+        if (this.y < this.minY) {
+          this.y = this.minY;
+        }
+        if (this.y > this.maxY) {
+          this.y = this.maxY;
+        }
+        this.x += this.hSpeed * delta;
+        if (!this.movingV) {
+          this.vSpeed *= 0.8;
+        }
+        if (!this.movingH) {
+          this.hSpeed *= 0.8;
+        }
+      }
+      this.movingV = false;
+      return this.movingH = false;
     };
 
     Ship.prototype.draw = function(cameraOffsetX) {
@@ -50,23 +72,33 @@
           return this.y += 1;
         }
       } else {
-        this.y += direction * delta * this.vSpeed;
-        if (this.y < this.minY) {
-          this.y = this.minY;
+        this.vSpeed += this.vThrust * delta * direction;
+        if (this.vSpeed > this.maxVSpeed) {
+          this.vSpeed = this.maxVSpeed;
+        } else if (this.vSpeed < -this.maxVSpeed) {
+          this.vSpeed = -this.maxVSpeed;
         }
-        if (this.y > this.maxY) {
-          return this.y = this.maxY;
-        }
+        return this.movingV = true;
       }
     };
 
     Ship.prototype.moveH = function(delta, direction) {
       if (this.warping) {
-        this.x += delta * this.hSpeed * 5;
+        this.x += delta * this.maxHSpeed * 5;
       } else {
-        this.x += direction * delta * this.hSpeed;
+        this.hSpeed += this.hThrust * delta * direction;
+        if (this.hSpeed > this.maxHSpeed) {
+          this.hSpeed = this.maxHSpeed;
+        } else if (this.hSpeed < -this.maxHSpeed) {
+          this.hSpeed = -this.maxHSpeed;
+        }
+        this.movingH = true;
       }
       return this.facingLeft = direction < 0;
+    };
+
+    Ship.prototype.switchDirection = function() {
+      return this.facingLeft = !this.facingLeft;
     };
 
     Ship.prototype.fireShot = function() {
@@ -77,13 +109,14 @@
       if (this.cooldown > 0) {
         return;
       }
-      shotSpeed = 200 * Screen.pixelW;
+      shotSpeed = 250 * Screen.pixelW;
       shotOffset = 14 * Screen.pixelW;
       if (this.facingLeft) {
         shotSpeed *= -1;
         shotOffset *= -1;
       }
       Game.world.getNextPlayerShot().fire(this.x + shotOffset, this.y + 2 * Screen.pixelH, shotSpeed);
+      Game.shotsFired += 1;
       return this.cooldown = 0.2;
     };
 
@@ -99,7 +132,7 @@
       this.offsetX = this.w / -2;
       this.offsetY = this.h / -2;
       this.dead = true;
-      this.hitbox = buildHitbox(this.offsetX, this.offsetY, 0, -1, 14, 6);
+      this.hitbox = buildHitbox(this.offsetX, this.offsetY, 2, -4, 14, 6);
     }
 
     PlayerShot.prototype.fire = function(x, y, hSpeed) {

@@ -12,7 +12,7 @@ class UFO extends Enemy
 
     update: (delta) ->
         @x += @direction * @hSpeed * delta
-        @y = @base + Math.sin(@x / 100) * 30
+        @y = @base + Math.sin(@x / 100) * 10 * Screen.pixelH
         if !@offScreen && Math.random() > 0.99
             @fire()
 

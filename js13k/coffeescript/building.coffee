@@ -28,7 +28,7 @@ class Radar extends Enemy
         @sprite = sprites.radar
         super
         @offsetY = -@h
-        @cooldown = Math.random() * 5
+        @cooldown = Math.random()
         @firePattern = [3, 0.5]
         @patternIndex = 0
         @points = 100
