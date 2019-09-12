@@ -1,3 +1,460 @@
+class Enemy
+    constructor: ->
+        @w = @sprite.imageW
+        @h = @sprite.imageH
+        @offsetX = @w / -2
+        @offsetY = @h / -2
+        @direction ||= if Math.random() > 0.5 then 1 else -1
+        @facingLeft = @direction < 0
+        @canBeDestroyed = true
+
+    draw: (cameraOffsetX) ->
+        @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, @facingLeft)
+
+    update: (delta) ->
+# do nothing
+        true
+
+    onExplode: ->
+# do nothing
+        true
+
+
+class Building extends Enemy
+    constructor: (@x, @y) ->
+        @sprite = sprites.building
+
+        super
+
+        @offsetY = -@h
+        @canBeDestroyed = false
+        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 3, 13, 32)
+
+
+
+class Mine extends Enemy
+    constructor: (@x, @y) ->
+        @sprite = sprites.mine
+        super
+        @points = 100
+        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 1, 15, 15)
+
+    onExplode: ->
+        shotSpeed = 50 * Screen.pixelD
+        for direction in [0, Math.PI, -Math.PI/2, Math.PI/2]
+            Game.world.getNextEnemyShot().fire(@x, @y, shotSpeed, direction)
+
+
+class Radar extends Enemy
+    constructor: (@x, @y) ->
+        @sprite = sprites.radar
+        super
+        @offsetY = -@h
+        @cooldown = Math.random()
+        @firePattern = [3, 0.5]
+        @patternIndex = 0
+        @points = 100
+        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 2, 15, 16)
+
+    update: (delta) ->
+        @cooldown -= delta
+        if @cooldown < 0
+            @fire() unless @offScreen
+            @patternIndex += 1
+            @patternIndex = 0 if @patternIndex == @firePattern.length
+            @cooldown = @firePattern[@patternIndex]
+
+
+    fire: ->
+        shotSpeed = 50 * Screen.pixelD
+        for direction in [Math.PI, -Math.PI/2, 0]
+            Game.world.getNextEnemyShot().fire(@x - 3 * Screen.pixelW, @y - 13 * Screen.pixelH, shotSpeed, direction)
+
+
+#window.Building = Building
+#window.Mine = Mine
+#window.Radar = Radar
+
+
+class EnemyShot
+    constructor: ->
+        @sprite = sprites.enemyShot
+        @w = @sprite.imageW
+        @h = @sprite.imageH
+        @offsetX = @w / -2
+        @offsetY = @h / -2
+        @dead = true
+
+    fire: (@x, @y, speed, directionRad) ->
+        @dead = false
+        @offScreen = false
+        @hSpeed = (Math.cos(directionRad) * speed)
+        @vSpeed = (Math.sin(directionRad) * speed)
+
+    draw: (cameraOffsetX) ->
+        @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, false)
+
+    update: (delta) ->
+        @x += @hSpeed * delta
+        @y += @vSpeed * delta
+        if @offScreen
+            @dead = true
+
+
+
+#window.Enemy = Enemy
+#window.EnemyShot = EnemyShot
+
+GameStates =
+    PRE_LAUNCH: 'PRE_LAUNCH'
+    TITLE_SCREEN: 'TITLE_SCREEN'
+    PLAYING_IN_PLAY: 'PLAYING_IN_PLAY'
+    PLAYING_WARPING: 'PLAYING_WARPING'
+    PLAYING_WARPING_WIN: 'PLAYING_WARPING_WIN'
+    START_OF_LEVEL: 'START_OF_LEVEL'
+    PLAYING_SPAWNING: 'PLAYING_SPAWNING'
+    GAME_OVER: 'GAME_OVER'
+    PLAYER_WINS: 'PLAYER_WINS'
+
+Game =
+    state: GameStates.PRE_LAUNCH
+
+    run: ->
+        @ctx = Screen.ctx
+        @canvas = Screen.canvas
+        @cooldown = 0
+        Screen.setSize(25, 23)
+        addChars(48, astroDigits)
+        addChars(97, lowercase)
+        @showStory()
+
+    update: (timestamp) ->
+        if @lastTimestamp
+            delta = (timestamp - @lastTimestamp) / 1000
+        else
+            delta = 0
+        @lastTimestamp = timestamp
+        @cooldown -= delta
+
+        #        if @state != @lastState
+        #            console.log 'Changed state to ', @state
+        #            @lastState = @state
+
+        if @state == GameStates.PRE_LAUNCH
+            if keysDown.fire && @cooldown <= 0
+                @cooldown = 0.5
+                @showTitleScreen()
+        else if @state == GameStates.TITLE_SCREEN
+            if keysDown.fire && @cooldown <= 0
+                @startGame()
+
+        else
+            if @state == GameStates.GAME_OVER || @state == GameStates.PLAYER_WINS
+                if keysDown.fire && @cooldown <= 0
+                    @state = GameStates.TITLE_SCREEN
+                    @cooldown = 1
+                    @showTitleScreen()
+
+            else if @state == GameStates.PLAYING_SPAWNING
+                if @cooldown < 0
+                    @state = GameStates.PLAYING_IN_PLAY
+                    @ship.invulnerable = false
+                else if @cooldown < 2
+                    @ship.dead = false
+                    @ship.autopilot = false
+                    @ship.invulnerable = true
+
+            else if @state == GameStates.PLAYING_WARPING
+                if @cooldown < 0
+                    @state = GameStates.PLAYING_SPAWNING
+                    @ship.autopilot = false
+                    @ship.invulnerable = true
+                    @ship.warping = false
+                    @cooldown = 2
+                else if @cooldown < 2 && @world.levelEnded
+                    @level += 1
+                    @world.generate(@level)
+
+            else if @state == GameStates.PLAYING_WARPING_WIN
+                if @cooldown < 0
+                    @state = GameStates.PLAYER_WINS
+                    @cooldown = 1
+                    @showEnding()
+        #
+        #            else if @state == GameStates.PLAYING_IN_PLAY
+        #                true
+        # do nothing
+        unless @state == GameStates.TITLE_SCREEN || @state == GameStates.PRE_LAUNCH || @state == GameStates.PLAYER_WINS
+            @world.update(delta)
+            @draw()
+
+    draw: ->
+        if @state == GameStates.PLAYING_WARPING
+            Screen.screenColour = Colours.PURPLE
+            Screen.clear()
+            Screen.textColour = Colours.WHITE
+            levelText = if @world.levelEnded
+                @level
+            else
+                @level - 1
+            Screen.printAt 6, 8, "MOON #{levelText} CLEARED"
+            Screen.printAt 8, 10, 'WARPING ...'
+            Screen.textColour = Colours.BLUE
+        else if @state == GameStates.PLAYING_WARPING_WIN
+            Screen.screenColour = Colours.GREEN
+            Screen.clear()
+            Screen.textColour = Colours.WHITE
+            #                     1234567890123456789012345
+            Screen.printAt 3, 8, "MISSION SUCCESSFUL!"
+            Screen.printAt 7, 10,'WARPING TO'
+            Screen.printAt 3, 11,'RENDEZVOUS POINT...'
+            Screen.textColour = Colours.BLUE
+        else
+            @ctx.fillStyle = Colours.BLACK
+            @ctx.fillRect(0, 0, @canvas.width, @canvas.height)
+            Screen.textColour = Colours.WHITE
+
+        Screen.printAt 1, 2, ''+@score
+        Screen.printAt 12, 2, ''+@level
+        if @livesLeft > 0
+            for i in [1..@livesLeft]
+                Screen.printAt 24 - i, 2, '/' # prints a heart character
+        @world.draw()
+
+        if @state == GameStates.GAME_OVER
+            Screen.textColour = Colours.WHITE
+            Screen.printAt 8, 8, 'GAME OVER'
+            if @cooldown < 0
+                Screen.printAt 7, 10, 'Press  FIRE'
+
+    startGame: ->
+        @state = GameStates.PLAYING_SPAWNING
+        addChars(97, lowercase)
+
+        Screen.clear()
+        Screen.printAt 8, 4, "Playing ..."
+        @score = 0
+        @kills = 0
+        @shotsFired = 0
+        @livesLeft = 4
+        @level = 1
+        @ship = new Ship()
+        @world = new World(1, @ship)
+        @ship.y = @world.blockToPixelH(13)
+        @cooldown = 2
+
+    warpToNextWorld: ->
+        if @level == 5
+            @state = GameStates.PLAYING_WARPING_WIN
+        else
+            @state = GameStates.PLAYING_WARPING
+        @cooldown = 5
+        @ship.warping = true
+        @world.levelEnded = true
+
+
+    endGame: ->
+        @state = GameStates.GAME_OVER
+        @cooldown = 3
+
+    respawnPlayer: ->
+        @ship.dead = true
+        @ship.autopilot = true
+        if @livesLeft == 0
+            @endGame()
+        else
+            @livesLeft -= 1
+            @ship.y = 8 * 12 * Screen.pixelH
+            @state = GameStates.PLAYING_SPAWNING
+            @cooldown = 3
+
+
+    hLine: (row) ->
+        Screen.printAt 0, row, ';;;;;;;;;;;;;;;;;;;;;;;;;'
+
+
+    showTitleScreen: ->
+        Typer.clear()
+        addChars(97, triangles)
+
+        @state = GameStates.TITLE_SCREEN
+        Cursor.hide()
+        Screen.setBorder(Colours.BLUE)
+        Screen.screenColour = Colours.BLACK
+        Screen.clear()
+
+        Screen.textColour = Colours.YELLOW
+        Screen.printAt 3, 2, "n nopnianean n n kea"
+        Screen.textColour = Colours.GREEN
+        Screen.printAt 3, 3, "bdnopnldnhdn n nkea "
+        Screen.textColour = Colours.PURPLE
+        Screen.printAt 3, 5, "  b"
+        Screen.textColour = Colours.RED
+        Screen.printAt 3, 1, "d dopcn nhdd mnnmnnd"
+        Screen.printAt 10, 3, "d"
+        Screen.textColour = Colours.BLUE
+        Screen.printAt 3, 4, " bnopbn neabnm bjhnd"
+        Screen.printAt 10, 2, "a"
+        #        @hLine(5)
+        Screen.textColour = Colours.WHITE
+        #        Screen.printAt 0, 6, "COME WITH ME, BACK TO '83"
+        Screen.printAt 0, 6, "GET THE SHIP BACK TO BASE"
+        @hLine(7)
+
+        Screen.printAt 15, 9, "50"
+        Screen.printAt 15, 12, "50"
+        Screen.printAt 15, 15, "100"
+        Screen.printAt 15, 18, "150"
+
+        Screen.printAt 1, 10, "MOVE"
+        Screen.printAt 1, 12, "OR"
+        Screen.printAt 1, 16, "FIRE"
+        @hLine(20)
+        @hLine(22)
+        Screen.textColour = Colours.YELLOW
+        Screen.printAt 3, 21, 'PRESS SPACE TO START'
+        Screen.textColour = Colours.PURPLE
+        Screen.printAt 1, 11, "^ _ $ &"
+        Screen.printAt 1, 13, "W A S D"
+        Screen.printAt 1, 17, "SPACE"
+
+        Screen.textColour = Colours.BLUE
+        Screen.drawSprite(96, 71, ufo)
+        Screen.drawSprite(96, 88, radar)
+        Screen.drawSprite(96, 112, mine)
+        Screen.drawSprite(96, 140, guppie)
+#        Screen.drawSprite(50, 50, building)
+#        Screen.drawSprite(70, 50, ship)
+
+    showStory: ->
+        Screen.screenColour = Colours.BLACK
+        Screen.setBorder(Colours.BLACK)
+        Screen.clear()
+        Typer.display [
+#  |23456789012|123456789012|23456789012|123456789012|23456789012|123456789012
+            'c:GREEN'
+            't:'
+            't: ** INCOMING  MESSAGE **'
+            't:'
+            't:Pilot,'
+            't:'
+            "t:You've infiltrated       The Foundation's secret  research base and stolen their next gen fighter."
+            't:'
+            "t:Now you'll need to fight your way past their      defences on the five     outer moons, back to our ship waiting in deep     space."
+            't:'
+            't:Fly well,'
+            't:The rebellion depends on you.'
+            'd: '
+            'd:'
+            'c:BLUE'
+            'd:       Press SPACE'
+        ]
+        requestAnimationFrame update
+
+    showEnding: ->
+        Screen.screenColour = Colours.BLACK
+        Screen.setBorder(Colours.BLACK)
+        Screen.clear()
+        Typer.display [
+#  |23456789012|123456789012|23456789012|123456789012|23456789012|123456789012
+            'c:GREEN'
+            't:'
+            't: ** INCOMING  MESSAGE **'
+            't:'
+            't:Awesome skill, Pilot!'
+            't:'
+            't:The technology in this   ship will be invaluable  in our fight against     The Foundation and their evil schemes.'
+            't:'
+            't:Well done.'
+            't:'
+            't:'
+            'c:YELLOW'
+            't:   Score       ' + ('' + @score).padStart(5, ' ')
+            't:   Kills       ' + ('' + @kills).padStart(5, ' ')
+            't:   Shots fired ' + ('' + @shotsFired).padStart(5, ' ')
+            't:   Accuracy    ' + ((@kills / @shotsFired * 100).toFixed(1) + '%').padStart(6, ' ')
+            't:'
+            'c:BLUE'
+            't:       Press SPACE'
+            'p:1'
+
+        ]
+
+
+
+
+class ItemPool
+    constructor: (itemClass, poolSize) ->
+        @pool = []
+        for i in [0..poolSize]
+            @pool.push new itemClass()
+        @itemIndex = 0
+
+    getNextItem: ->
+        item = @pool[@itemIndex]
+        @itemIndex += 1
+        if @itemIndex == @pool.length
+            @itemIndex = 0
+        return item
+
+
+#window.ItemPool = ItemPool
+
+class Particle
+    constructor: () ->
+        @w = Screen.pixelW * 1.5
+        @h = Screen.pixelH * 1.5
+        @offsetX = @w / -2
+        @offsetY = @h / -2
+        @dead = true
+        @maxLife = Math.random() + 2
+        @colour = {}
+        @drag = 0.985
+
+    fire: (@x, @y, directionRad, speed, rgbValues) ->
+        directionRad += Math.random() / 10 - 0.05
+        speed *= 0.9 + Math.random() * 0.2
+        @dead = false
+        @offScreen = false
+        @hSpeed = (Math.cos(directionRad) * speed)
+        @vSpeed = (Math.sin(directionRad) * speed)
+        @life = @maxLife
+        @initColour(rgbValues)
+
+    draw: (cameraOffsetX) ->
+        Screen.ctx.fillStyle = @colour.hexString + @colour.alphaHex
+        Screen.ctx.fillRect(@x + @offsetX - cameraOffsetX, @y + @offsetY, @w, @h)
+
+    update: (delta) ->
+        @hSpeed *= @drag
+        @vSpeed *= @drag
+        @x += @hSpeed * delta
+        @y += @vSpeed * delta
+        @life -= delta
+        if @life <= 0
+            @dead = true
+        else
+            ratio = @life / @maxLife
+            if ratio < 0.5
+                alpha = Math.round(ratio * 2 * 255).toString(16)
+                alpha = '0' + alpha if alpha.length == 1
+                @colour.alphaHex = alpha
+
+
+    initColour: (rgbValues) ->
+        r = rgbValues.r.toString(16)
+        r = '0' + r if r.length == 1
+        g = rgbValues.g.toString(16)
+        g = '0' + g if g.length == 1
+        b = rgbValues.b.toString(16)
+        b = '0' + b if b.length == 1
+        @colour.rgb = rgbValues
+        @colour.hexString = '#'+r+g+b
+        @colour.alphaHex = 'ff'
+
+
+#window.Particle = Particle
+
 Colours =
     BLACK:  '#000000'
     WHITE:  '#ffffff'
@@ -185,284 +642,156 @@ Screen =
 
 
 
-window.Screen = Screen
-window.Colours = Colours
-window.Cursor = Cursor
+#window.Screen = Screen
+#window.Colours = Colours
+#window.Cursor = Cursor
 
-GameStates =
-    PRE_LAUNCH: 'PRE_LAUNCH'
-    TITLE_SCREEN: 'TITLE_SCREEN'
-    PLAYING_IN_PLAY: 'PLAYING_IN_PLAY'
-    PLAYING_WARPING: 'PLAYING_WARPING'
-    START_OF_LEVEL: 'START_OF_LEVEL'
-    PLAYING_SPAWNING: 'PLAYING_SPAWNING'
-    GAME_OVER: 'GAME_OVER'
+class Ship
+    constructor: ->
+        @sprite = sprites.ship
+        @w = @sprite.imageW
+        @h = @sprite.imageH
+        @offsetX = @w / -2
+        @offsetY = @h / -2
+        @x = 100
+        @y = 100
+        @facingLeft = false
+        @maxVSpeed = 120 * Screen.pixelH
+        @maxHSpeed = 180 * Screen.pixelW
+        @vThrust = 3000
+        @hThrust = 3000
+        @vSpeed = 0
+        @hSpeed = 0
+        @minY = 18 * Screen.pixelH
+        @maxY = 165 * Screen.pixelH
+        @offScreen = false
+        @dead = false
+        @autopilot = false
+        @invulnerable = false
+        @warping = false
+        @cooldown = 0.3
+        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 4, 30, 12)
 
-Game =
-    state: GameStates.PRE_LAUNCH
-
-    run: ->
-        @ctx = Screen.ctx
-        @canvas = Screen.canvas
-        @cooldown = 0
-        Screen.setSize(25, 23)
-        Screen.screenColour = Colours.BLACK
-        Screen.textColour = Colours.WHITE
-        Screen.setBorder(Colours.BLUE)
-        Cursor.hide()
-        addChars(48, astroDigits)
-        @showTitleScreen()
-        requestAnimationFrame update
-
-    update: (timestamp) ->
-        if @lastTimestamp
-            delta = (timestamp - @lastTimestamp) / 1000
-        else
-            delta = 0
-        @lastTimestamp = timestamp
-        @cooldown -= delta
-
-        #        if @state != @lastState
-        #            console.log 'Changed state to ', @state
-        #            @lastState = @state
-
-        if @state == GameStates.TITLE_SCREEN
-            if keysDown.fire && @cooldown <= 0
-                @startGame()
-
-        else
-            if @state == GameStates.GAME_OVER
-                if keysDown.fire && @cooldown <= 0
-                    @state = GameStates.TITLE_SCREEN
-                    @cooldown = 1
-                    @showTitleScreen()
-
-            else if @state == GameStates.PLAYING_SPAWNING
-                if @cooldown < 0
-                    @state = GameStates.PLAYING_IN_PLAY
-                    @ship.invulnerable = false
-                else if @cooldown < 2
-                    @ship.dead = false
-                    @ship.autopilot = false
-                    @ship.invulnerable = true
-
-            else if @state == GameStates.PLAYING_WARPING
-                if @cooldown < 0
-                    @state = GameStates.PLAYING_SPAWNING
-                    @ship.autopilot = false
-                    @ship.invulnerable = true
-                    @ship.warping = false
-                    @cooldown = 2
-                else if @cooldown < 2 && @world.levelEnded
-                    @level += 1
-                    @world.generate(@level)
-        #
-        #            else if @state == GameStates.PLAYING_IN_PLAY
-        #                true
-        # do nothing
-        unless @state == GameStates.TITLE_SCREEN
-            @world.update(delta)
-            @draw()
-
-    draw: ->
-        if @state == GameStates.PLAYING_WARPING
-            Screen.screenColour = Colours.PURPLE
-            Screen.clear()
-            Screen.textColour = Colours.WHITE
-            levelText = if @world.levelEnded
-                @level
-            else
-                @level - 1
-            Screen.printAt 5, 8, "LEVEL #{levelText} CLEARED"
-            Screen.printAt 8, 10, 'WARPING ...'
-            Screen.textColour = Colours.BLUE
-        else
-            @ctx.fillStyle = Colours.BLACK
-            @ctx.fillRect(0, 0, @canvas.width, @canvas.height)
-            Screen.textColour = Colours.WHITE
-
-        Screen.printAt 1, 2, ''+@score
-        Screen.printAt 12, 2, ''+@level
-        if @livesLeft > 0
-            for i in [1..@livesLeft]
-                Screen.printAt 24 - i, 2, '/' # prints a heart character
-        @world.draw()
-
-        if @state == GameStates.GAME_OVER
-            Screen.textColour = Colours.WHITE
-            Screen.printAt 8, 8, 'GAME OVER'
+    update: (delta) ->
+        if @cooldown > 0
+#            console.log('cooldown', @cooldown)
+            @cooldown -= delta
             if @cooldown < 0
-                Screen.printAt 7, 10, 'Press  FIRE'
-
-    startGame: ->
-        @state = GameStates.PLAYING_SPAWNING
-        Screen.clear()
-        Screen.printAt 8, 4, "Playing ..."
-        @score = 0
-        @livesLeft = 4
-        @level = 1
-        @ship = new Ship()
-        @world = new World(1, @ship)
-        @cooldown = 2
-
-    warpToNextWorld: ->
-        @state = GameStates.PLAYING_WARPING
-        @cooldown = 5
-        @ship.warping = true
-        @world.levelEnded = true
+                @cooldown = 0
+        unless @warping
+            @y += @vSpeed * delta
+            if @y < @minY then @y = @minY
+            if @y > @maxY then @y = @maxY
+            @x += @hSpeed * delta
+            # very high braking if user not actively moving
+            unless @movingV
+                @vSpeed *= 0.8
+            unless @movingH
+                @hSpeed *= 0.8
+        @movingV = false
+        @movingH = false
 
 
-    endGame: ->
-        @state = GameStates.GAME_OVER
-        @cooldown = 3
+    draw: (cameraOffsetX) ->
+        @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, @facingLeft)
 
-    respawnPlayer: ->
-        @ship.dead = true
-        @ship.autopilot = true
-        if @livesLeft == 0
-            @endGame()
-        else
-            @livesLeft -= 1
-            @ship.y = 8 * 12 * Screen.pixelH
-            @state = GameStates.PLAYING_SPAWNING
-            @cooldown = 3
-
-
-    hLine: (row) ->
-        Screen.printAt 0, row, ';;;;;;;;;;;;;;;;;;;;;;;;;'
-
-
-    showTitleScreen: ->
-        @state = GameStates.TITLE_SCREEN
-        Screen.screenColour = Colours.BLACK
-        Screen.clear()
-        Screen.printAt 8, 4, "ASTROBLITZ"
-        #        @hLine(5)
-        Screen.printAt 0, 6, "(C)1982 CREATIVE SOFTWARE"
-        @hLine(7)
-
-        Screen.printAt 15, 9, "50"
-        Screen.printAt 15, 12, "50"
-        Screen.printAt 15, 15, "100"
-        Screen.printAt 15, 18, "150"
-
-        Screen.printAt 1, 10, "MOVE"
-        Screen.printAt 1, 12, "OR"
-        Screen.printAt 1, 16, "FIRE"
-        @hLine(20)
-        @hLine(22)
-        Screen.textColour = Colours.YELLOW
-        Screen.printAt 3, 21, 'PRESS SPACE TO START'
-        Screen.textColour = Colours.CYAN
-        Screen.printAt 1, 11, "^ _ $ %"
-        Screen.printAt 1, 13, "W A S D"
-        Screen.printAt 1, 17, "SPACE"
-
-        Screen.textColour = Colours.BLUE
-        Screen.drawSprite(96, 71, ufo)
-        Screen.drawSprite(96, 88, radar)
-        Screen.drawSprite(96, 112, mine)
-        Screen.drawSprite(96, 140, guppie)
-#        Screen.drawSprite(50, 50, building)
-#        Screen.drawSprite(70, 50, ship)
-
-window.update = (timestamp) ->
-    Game.update(timestamp)
-    if window.paused
-        console.log 'Game is paused'
-    else
-        window.requestAnimationFrame update
-    true
-
-# Keys states (false: key is released / true: key is pressed)
-window.keysDown =
-    left: false
-    right: false
-    up: false
-    down: false
-    fire: false
-window.paused = false
-
-window.keyToggled = (keyCode, isPressed) ->
-    if keyCode == 32
-        window.keysDown.fire = isPressed
-    # Up (up / W / Z)
-    if(keyCode == 38 || keyCode == 90 || keyCode == 87)
-        window.keysDown.up = isPressed
-    # Right (right / D)
-    if(keyCode == 39 || keyCode == 68)
-        window.keysDown.right = isPressed
-    # Down (down / S)
-    if(keyCode == 40 || keyCode == 83)
-        window.keysDown.down = isPressed
-    # Left (left / A / Q)
-    if(keyCode == 37 || keyCode == 65 ||keyCode == 81)
-        window.keysDown.left = isPressed
-    if(keyCode == 66)
-        window.paused = isPressed
-        console.log('Paused', window.paused)
-
-# Key listeners
-window.onkeydown = (e) ->
-    keyToggled(e.keyCode, true)
-
-window.onkeyup = (e) ->
-    keyToggled(e.keyCode, false)
-
-
-window.Game = Game
-window.GameStates = GameStates
-Typer =
-    command: null
-    commandPos: 0
-
-    display: (@commands, @callback) ->
-        @execNextCommand()
-
-    execNextCommand: ->
-        if @commands.length == 0
-            @callback?()
-            return
-        command = @commands.shift().split(':')
-        @commandText = command[1]
-        @command = command[0]
-        @commandPos = 0
-        #        console.log({@command, @commandText})
-        @execCommand()
-
-    execCommand: ->
-        if @command == 'd' # display text
-            Cursor.hide()
-            Screen.println(@commandText)
-            setTimeout((=> Typer.execNextCommand()), 50)
-        else if @command == 'w' # wait with cursor flashing
-            Cursor.show()
-            setTimeout((=> Typer.execNextCommand()), parseInt(@commandText))
-        else if @command == 't' # type as if user typing
-            Cursor.show()
-            if @commandPos < @commandText.length
-                Screen.print(@commandText.charAt(@commandPos))
-                @commandPos += 1
-                #                delay = Math.round(Math.random()*200) + 50
-                #                console.log({delay})
-                setTimeout((=> Typer.execCommand()), 50)
+    moveV: (delta, direction) ->
+        if @warping
+            target = Game.world.blockToPixelH(13)
+            #            console.log(target, @y)
+            if Math.abs(target - @y) < 2
+                @y = target
+            else if @y > target
+                @y -= 1
             else
-                Cursor.newLine()
-                setTimeout((=> Typer.execNextCommand()), 800)
-        else if @command == 'p' # pause with no cursor
-            Cursor.hide()
-            setTimeout((=> Typer.execNextCommand()), parseInt(@commandText))
-        else if @command == 'x' # clear screen
-            Screen.clear()
-            setTimeout((=> Typer.execNextCommand()), 50)
-        else if @command == 'c' # change text colour
-            Screen.textColour = Colours[@commandText]
-            setTimeout((=> Typer.execNextCommand()), 50)
+                @y += 1
+        else
+            @vSpeed += @vThrust * delta * direction
+            if @vSpeed > @maxVSpeed then @vSpeed = @maxVSpeed
+            else if @vSpeed < -@maxVSpeed then @vSpeed = -@maxVSpeed
+            @movingV = true
 
 
+    moveH: (delta, direction) ->
+        if @warping
+            @x += delta * @maxHSpeed * 5
+        else
+            @hSpeed += @hThrust * delta * direction
+            if @hSpeed > @maxHSpeed then @hSpeed = @maxHSpeed
+            else if @hSpeed < -@maxHSpeed then @hSpeed = -@maxHSpeed
+            @movingH = true
+        @facingLeft = direction < 0
+
+    switchDirection: ->
+        @facingLeft = !@facingLeft
+
+    fireShot: ->
+        return if @warping
+        if @cooldown > 0
+            return
+        shotSpeed = 250 * Screen.pixelW
+        shotOffset = 14 * Screen.pixelW
+        if @facingLeft
+            shotSpeed *= -1
+            shotOffset *= -1
+
+        Game.world.getNextPlayerShot().fire(@x + shotOffset, @y + 2 * Screen.pixelH, shotSpeed)
+        Game.shotsFired += 1
+        @cooldown = 0.2
 
 
-window.Typer = Typer
+class PlayerShot
+    constructor: ->
+        @sprite = sprites.playerShot
+        @w = @sprite.imageW
+        @h = @sprite.imageH
+        @offsetX = @w / -2
+        @offsetY = @h / -2
+        @dead = true
+        @hitbox = buildHitbox(@offsetX, @offsetY, 2, -4, 14, 6)
+
+    fire: (@x, @y, @hSpeed) ->
+        @dead = false
+        @offScreen = false
+        @facingLeft = @hSpeed < 0
+
+    draw: (cameraOffsetX) ->
+        @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, @facingLeft)
+
+    update: (delta) ->
+        @x += @hSpeed * delta
+        if @offScreen
+            @dead = true
+
+#window.Ship = Ship
+#window.PlayerShot = PlayerShot
+
+class Snake extends Enemy
+    constructor: (@x, @direction) ->
+        @sprite = sprites.snake
+        @base = Screen.pixelH * 8 * 10
+        @y = @base
+        @vSpeed = 200 * Screen.pixelH # unused
+        @hSpeed = 30 * Screen.pixelW
+
+        super
+
+        #        @direction = direction
+        @points = 100
+        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 2, 14, 14)
+
+    update: (delta) ->
+        @x += @direction * @hSpeed * delta
+        @y = @base + Math.sin(@x / 200) * 8 * 7 * Screen.pixelH
+        if !@offScreen && Math.random() > 0.991
+            @fire()
+
+    fire: ->
+        shotSpeed = 150 * Screen.pixelH
+        Game.world.getNextEnemyShot().fire(@x, @y, shotSpeed, 0)
+        Game.world.getNextEnemyShot().fire(@x, @y, shotSpeed, Math.PI)
+
+#window.Snake = Snake
 
 class Sprite
     constructor: (@spriteData, @w, @h, @colours) ->
@@ -518,190 +847,64 @@ class Sprite
         sy = if reversed then @imageH else 0
         @ctx.getImageData(0, sy, @imageW, @imageH).data
 
-window.Sprite = Sprite
-IntroPrg =
-    run: (callback) ->
-        Typer.display [
-            'w:2000',
-            't:LOAD "INTRO",8',
-            'd:',
-            'd:SEARCHING FOR INTRO',
-            'p:1000',
-            'd:LOADING',
-            'p:2000',
-            'd:READY.',
-            'w:1000',
-            't:?"@"',
-            'x:',
-            't:RUN',
-            'c:BLACK',
-            'd:Hello there',
-            'c:GREEN',
-            'd:Here\'s some green text',
-            'c:PURPLE',
-            'd:Purple text',
-            'c:RED',
-            'd:This is written in red',
-            'c:CYAN',
-            'd:and some in CYAN',
-            'c:YELLOW',
-            'd:How about yellow',
-            'c:BLUE',
-            'd:READY.',
-            'w:1000',
-        ],
-            ->
-#        Screen.clear()
-                callback()
+#window.Sprite = Sprite
 
+Typer =
+    command: null
+    commandPos: 0
 
+    display: (@commands, @callback) ->
+        @execNextCommand()
 
-window.IntroPrg = IntroPrg
-class Ship
-    constructor: ->
-        @sprite = sprites.ship
-        @w = @sprite.imageW
-        @h = @sprite.imageH
-        @offsetX = @w / -2
-        @offsetY = @h / -2
-        @x = 100
-        @y = 100
-        @facingLeft = false
-        @vSpeed = 100 * Screen.pixelH
-        @hSpeed = 150 * Screen.pixelW
-        @minY = 18 * Screen.pixelH
-        @maxY = 165 * Screen.pixelH
-        @offScreen = false
-        @dead = false
-        @autopilot = false
-        @invulnerable = false
-        @warping = false
-        @cooldown = 0.3
-        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 4, 30, 12)
-
-    update: (delta) ->
-        if @cooldown > 0
-#            console.log('cooldown', @cooldown)
-            @cooldown -= delta
-            if @cooldown < 0
-                @cooldown = 0
-
-    draw: (cameraOffsetX) ->
-        @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, @facingLeft)
-
-    moveV: (delta, direction) ->
-        if @warping
-            target = Game.world.blockToPixelH(13)
-            #            console.log(target, @y)
-            if Math.abs(target - @y) < 2
-                @y = target
-            else if @y > target
-                @y -= 1
-            else
-                @y += 1
-        else
-            @y += direction * delta * @vSpeed
-            if @y < @minY then @y = @minY
-            if @y > @maxY then @y = @maxY
-
-
-    moveH: (delta, direction) ->
-        if @warping
-            @x += delta * @hSpeed * 5
-        else
-            @x += direction * delta * @hSpeed
-        @facingLeft = direction < 0
-
-    fireShot: ->
-        return if @warping
-        if @cooldown > 0
+    execNextCommand: ->
+        if @commands.length == 0
+            @callback?()
             return
-        shotSpeed = 200 * Screen.pixelW
-        shotOffset = 14 * Screen.pixelW
-        if @facingLeft
-            shotSpeed *= -1
-            shotOffset *= -1
+        command = @commands.shift().split(':')
+        @commandText = command[1]
+        @command = command[0]
+        @commandPos = 0
+        #        console.log({@command, @commandText})
+        @execCommand()
 
-        Game.world.getNextPlayerShot().fire(@x + shotOffset, @y + 2 * Screen.pixelH, shotSpeed)
-        @cooldown = 0.2
-
-
-class PlayerShot
-    constructor: ->
-        @sprite = sprites.playerShot
-        @w = @sprite.imageW
-        @h = @sprite.imageH
-        @offsetX = @w / -2
-        @offsetY = @h / -2
-        @dead = true
-        @hitbox = buildHitbox(@offsetX, @offsetY, 0, -1, 14, 6)
-
-    fire: (@x, @y, @hSpeed) ->
-        @dead = false
-        @offScreen = false
-        @facingLeft = @hSpeed < 0
-
-    draw: (cameraOffsetX) ->
-        @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, @facingLeft)
-
-    update: (delta) ->
-        @x += @hSpeed * delta
-        if @offScreen
-            @dead = true
-
-window.Ship = Ship
-window.PlayerShot = PlayerShot
-
-class Enemy
-    constructor: ->
-        @w = @sprite.imageW
-        @h = @sprite.imageH
-        @offsetX = @w / -2
-        @offsetY = @h / -2
-        @direction = if Math.random() > 0.5 then 1 else -1
-        @facingLeft = @direction < 0
-        @canBeDestroyed = true
-
-    draw: (cameraOffsetX) ->
-        @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, @facingLeft)
-
-    update: (delta) ->
-# do nothing
-        true
-
-    onExplode: ->
-# do nothing
-        true
+    execCommand: ->
+        if @command == 'd' # display text
+            Cursor.hide()
+            Screen.println(@commandText)
+            setTimeout((=> Typer.execNextCommand()), 50)
+        else if @command == 'w' # wait with cursor flashing
+            Cursor.show()
+            setTimeout((=> Typer.execNextCommand()), parseInt(@commandText))
+        else if @command == 't' # type as if user typing
+            Cursor.show()
+            if @commandPos < @commandText.length
+                Screen.print(@commandText.charAt(@commandPos))
+                @commandPos += 1
+                #                delay = Math.round(Math.random()*200) + 50
+                #                console.log({delay})
+                setTimeout((=> Typer.execCommand()), 50)
+            else
+                Cursor.newLine()
+                setTimeout((=> Typer.execNextCommand()), 800)
+        else if @command == 'p' # pause with no cursor
+            Cursor.hide()
+            setTimeout((=> Typer.execNextCommand()), parseInt(@commandText))
+        else if @command == 'x' # clear screen
+            Screen.clear()
+            setTimeout((=> Typer.execNextCommand()), 50)
+        else if @command == 'c' # change text colour
+            Screen.textColour = Colours[@commandText]
+            setTimeout((=> Typer.execNextCommand()), 50)
 
 
-class EnemyShot
-    constructor: ->
-        @sprite = sprites.enemyShot
-        @w = @sprite.imageW
-        @h = @sprite.imageH
-        @offsetX = @w / -2
-        @offsetY = @h / -2
-        @dead = true
+    clear: ->
+        @commands = []
+        @command = null
+        @commandText = ''
+        @callback = null
 
-    fire: (@x, @y, speed, directionRad) ->
-        @dead = false
-        @offScreen = false
-        @hSpeed = (Math.cos(directionRad) * speed)
-        @vSpeed = (Math.sin(directionRad) * speed)
+#window.Typer = Typer
 
-    draw: (cameraOffsetX) ->
-        @sprite.draw(@x + @offsetX - cameraOffsetX, @y + @offsetY, false)
-
-    update: (delta) ->
-        @x += @hSpeed * delta
-        @y += @vSpeed * delta
-        if @offScreen
-            @dead = true
-
-
-
-window.Enemy = Enemy
-window.EnemyShot = EnemyShot
 
 class UFO extends Enemy
     constructor: (@x, @base) ->
@@ -717,7 +920,7 @@ class UFO extends Enemy
 
     update: (delta) ->
         @x += @direction * @hSpeed * delta
-        @y = @base + Math.sin(@x / 100) * 30
+        @y = @base + Math.sin(@x / 100) * 10 * Screen.pixelH
         if !@offScreen && Math.random() > 0.99
             @fire()
 
@@ -776,63 +979,121 @@ class Guppie extends Enemy
         Game.world.getNextEnemyShot().fire(@x + shotOffset, @y + 2 * Screen.pixelH, shotSpeed, direction)
 
 
-window.UFO = UFO
-window.Guppie = Guppie
+#window.UFO = UFO
+#window.Guppie = Guppie
 
-class Building extends Enemy
-    constructor: (@x, @y) ->
-        @sprite = sprites.building
+Vectors =
+#    originPoint: ->
+#        {x:0, y:0}
+#
+#    degToRad: (deg) ->
+#        0.017453292519943295 * deg
+#
+#    radToDeg: (rad) ->
+#        57.29577951308232 * rad
+#
+#    rotatePoint: (point, angle) ->
+#        x= point[0]
+#        y= point[1]
+#        # convert point to polar
+#        length= Math.sqrt(x*x+y*y)
+#        angleR= Math.acos(x/length)
+#        if (y<0)
+#            angleR = 0 - angleR
+#        # add angle
+#        angleR += angle
+#        # convert back to cartesian
+#        x1= Math.cos(angleR)* length
+#        y1= Math.sin(angleR)* length
+#        return [x1,y1]
+#
+#    rotatePath: (path, angle) ->
+#        path.map (p) => @rotatePoint(p, angle)
 
-        super
+#    addVectorToPoint: (point, angRad, length) ->
+##    angRad = @degToRad(direction)
+##    angRad = direction
+#        newPoint = x:0, y:0
+#        newPoint.x = point.x + (Math.cos(angRad) * length)
+#        newPoint.y = point.y + (Math.sin(angRad) * length)
+#        newPoint
 
-        @offsetY = -@h
-        @canBeDestroyed = false
-        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 3, 13, 32)
-
-
-
-class Mine extends Enemy
-    constructor: (@x, @y) ->
-        @sprite = sprites.mine
-        super
-        @points = 100
-        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 1, 15, 15)
-
-    onExplode: ->
-        shotSpeed = 50 * Screen.pixelD
-        for direction in [0, Math.PI, -Math.PI/2, Math.PI/2]
-            Game.world.getNextEnemyShot().fire(@x, @y, shotSpeed, direction)
-
-
-class Radar extends Enemy
-    constructor: (@x, @y) ->
-        @sprite = sprites.radar
-        super
-        @offsetY = -@h
-        @cooldown = Math.random() * 5
-        @firePattern = [3, 0.5]
-        @patternIndex = 0
-        @points = 100
-        @hitbox = buildHitbox(@offsetX, @offsetY, 1, 2, 15, 16)
-
-    update: (delta) ->
-        @cooldown -= delta
-        if @cooldown < 0
-            @fire() unless @offScreen
-            @patternIndex += 1
-            @patternIndex = 0 if @patternIndex == @firePattern.length
-            @cooldown = @firePattern[@patternIndex]
+#    addVectors: (angle1, length1, angle2, length2) ->
+#        x1 = Math.cos(angle1) * length1
+#        y1 = Math.sin(angle1) * length1
+#        x2 = Math.cos(angle2) * length2
+#        y2 = Math.sin(angle2) * length2
+#
+#        xR = x1 + x2
+#        yR = y1 + y2
+#        distance = Math.sqrt(xR*xR+yR*yR)
+#        return [0,0] if distance is 0
+#
+#        angle = Math.acos(xR/distance)
+#        angle = 0 - angle if yR < 0
+#
+#        return {angle, distance}
 
 
-    fire: ->
-        shotSpeed = 50 * Screen.pixelD
-        for direction in [Math.PI, -Math.PI/2, 0]
-            Game.world.getNextEnemyShot().fire(@x - 3 * Screen.pixelW, @y - 13 * Screen.pixelH, shotSpeed, direction)
+    angleDistBetweenPoints: (fromPoint, toPoint) ->
+        return 0 if fromPoint is toPoint
+        x = toPoint.x - fromPoint.x
+        y = toPoint.y - fromPoint.y
+        distance= Math.sqrt(x*x+y*y)
+        angle= Math.acos(x/distance)
+        if y < 0
+            angle = 0 - angle
+        {angle, distance}
+
+#    distBetweenPoints: (fromPoint, toPoint) ->
+#        return 0 if fromPoint is toPoint
+#        x = toPoint.x - fromPoint.x
+#        y = toPoint.y - fromPoint.y
+#        Math.sqrt(x*x+y*y)
+#
+#    shapesWithinReach: (shapeA, shapeB) ->
+#        Vectors.distBetweenPoints(shapeA.position, shapeB.position) < shapeA.reach + shapeB.reach
+#
+#    shapeBounds: (paths) ->
+#        return {minX:0, minY:0, maxX:0, maxY:0} if paths.length is 0 or paths[0].length is 0 or paths[0][0].length is 0
+#        minX = maxX = paths[0][0][1]
+#        minY = maxY = paths[0][0][1]
+#        for path in paths
+#            for point in path
+#                minX = point[0] if point[0] < minX
+#                maxX = point[0] if point[0] > maxX
+#                minY = point[1] if point[1] < minY
+#                maxY = point[1] if point[1] > maxY
+#        {minX, maxX, minY, maxY}
+#
+#    shapeCentre: (paths) ->
+#        bounds = @shapeBounds(paths)
+#        {x: (bounds.minX + bounds.maxX)/2, y:(bounds.minY + bounds.maxY)/2}
+#
+#    distFromOrigin: (x, y) ->
+#        Math.sqrt(x * x + y * y)
+#
+#    movePathOrigin: (paths, originX, originY) ->
+#        for path in paths
+#            for point in path
+#                unless point.length is 0
+#                    point[0] -= originX
+#                    point[1] -= originY
+#
+#    centrePath: (paths) ->
+#        centre = Vectors.shapeCentre(paths)
+#        Vectors.movePathOrigin(paths, centre.x, centre.y)
+#
+#    centrePathH: (paths) ->
+#        centre = Vectors.shapeCentre(paths)
+#        Vectors.movePathOrigin(paths, centre.x, 0)
+#
+#    centrePathV: (paths) ->
+#        centre = Vectors.shapeCentre(paths)
+#        Vectors.movePathOrigin(paths, 0, centre.y)
 
 
-window.Building = Building
-window.Mine = Mine
-window.Radar = Radar
+#window.Vectors = Vectors
 
 class World
     constructor: (@level, @ship) ->
@@ -867,24 +1128,57 @@ class World
         block * 8 * Screen.pixelW
 
 
-    generate: (levelNo) ->
+    generate: (level) ->
         @levelEnded = false
         @items = []
         item.dead = true for item in @playerShots.pool
         item.dead = true for item in @enemyShots.pool
         item.dead = true for item in @particles.pool
-        # TODO: generate different world for each level
-        for i in [0..randInt(3)+4]
+        buildings = randInt(3)+4
+        if level == 1
+            ufos = 5
+            radars = 3
+        else if level == 2
+            ufos = 12
+            radars = 5
+            mines = 0
+            guppies = 0
+        else if level == 3
+            ufos = 10
+            radars = 5
+            mines = 6
+            guppies = 0
+        else if level == 4
+            ufos = 3
+            radars = 3
+            mines = 0
+            guppies = 10
+        else if level == 5
+            ufos = 5
+            radars = 3
+            mines = 0
+            guppies = 0
+            snakeStart = @ship.x + @spawnWidth / 2
+            for i in [0.. 12]
+                @items.push new Snake(snakeStart + i * 32 * Screen.pixelH, -1)
+                @items.push new Snake(snakeStart + i * 32 * Screen.pixelH, 1)
+
+        for i in [0...buildings]
             @items.push new Building(randInt(@spawnWidth), @ground)
-        for i in [0..(4 + levelNo)]
-            @items.push new Radar(randInt(@spawnWidth), @ground)
-        for i in [0.. (5 + 2 * levelNo)]
-            @items.push new UFO(randInt(@spawnWidth), randInt(@blockToPixelH(11)) + @blockToPixelH(4.5))
-        if levelNo > 2
-            for i in [0.. (2 * levelNo)]
+        if radars
+            for i in [0...radars]
+                @items.push new Radar(randInt(@spawnWidth), @ground)
+        if ufos
+            for i in [0...ufos]
+                @items.push new UFO(randInt(@spawnWidth), randInt(@blockToPixelH(11)) + @blockToPixelH(4.5))
+        if mines
+            for i in [0...mines]
                 @items.push new Mine(randInt(@spawnWidth), randInt(@blockToPixelH(11)) + @blockToPixelH(4.5))
-        @guppies = levelNo > 1
-        @nextGuppieSpawn = 30
+        if guppies
+            for i in [0...guppies]
+                @items.push new Guppie(randInt(@spawnWidth))
+        @guppies = level > 1
+        @nextGuppieSpawn = 20
 
     getNextPlayerShot: ->
         @playerShots.getNextItem()
@@ -896,7 +1190,7 @@ class World
         @particles.getNextItem().fire(x, y, directionRad, speed, colour)
 
     spawnGuppie: ->
-        @nextGuppieSpawn = 30
+        @nextGuppieSpawn = 20
         @items.push new Guppie(@ship.x + @spawnWidth / 2)
 
     update: (delta) ->
@@ -914,6 +1208,10 @@ class World
                 @ship.moveV(delta, -1)
             else if keysDown.down
                 @ship.moveV(delta, 1)
+            #            if keysDown.shift
+            #                @ship.switchDirection()
+            #                window.keysDown.shift = false
+            #
 
             @ship.update(delta)
             if keysDown.fire
@@ -1008,7 +1306,7 @@ class World
                     if item.canBeDestroyed && !item.dead
                         if @hitboxesIntersect(shot, item)
                             shot.dead = true
-                            @enemyDies(item, shot.x, shot.y)
+                            @enemyDies(item, shot.x, shot.y, shot.hSpeed)
 
 
     hitboxesIntersect: (item1, item2) ->
@@ -1035,16 +1333,19 @@ class World
             pointY < item.y + item.hitbox.bottom
 
     playerDies: (hitPointX, hitPointY) ->
+        return if @ship.dead
         hitPoint = {x: hitPointX - @ship.x, y: hitPointY - @ship.y}
         @explodeSprite(@ship, hitPoint, 1)
         Game.respawnPlayer()
 
-    enemyDies: (enemy, hitPointX, hitPointY) ->
+    enemyDies: (enemy, hitPointX, hitPointY, hitSpeed) ->
+# hitSpeed +ve if travelling right, -ve for left
         hitPoint = {x: hitPointX - enemy.x, y: hitPointY - enemy.y}
-        @explodeSprite(enemy, hitPoint, 1)
+        @explodeSprite(enemy, hitPoint, hitSpeed)
         enemy.onExplode()
         enemy.dead = true
         Game.score += enemy.points
+        Game.kills += 1
         enemiesRemaining = 0
         for item in @items
             if !item.dead && item.canBeDestroyed
@@ -1058,8 +1359,12 @@ class World
         imageData = sprite.getImageData(gameItem.facingLeft)
         width = sprite.imageW
         height = sprite.imageH
+        dOffset = if direction > 0 # gameItem.x + gameItem.offsetX > point.x
+            10 * Screen.pixelW
+        else
+            -10 * Screen.pixelW
         origin = {x:0, y:0}
-        #        console.log point, origin
+        #        console.log gameItem.x, gameItem.y, point.x, point.y, gameItem.offsetX
         for y in [0...height] by Screen.pixelH
             for x in [0...width] by Screen.pixelW
                 offset =  y * (width * 4) + x * 4
@@ -1069,7 +1374,11 @@ class World
                 a = imageData[offset + 3]
                 if a > 0
                     pixel = {x:x + gameItem.offsetX, y:y + gameItem.offsetY}
-                    v1 = Vectors.angleDistBetweenPoints point, pixel
+                    if Math.abs(point.y - pixel.y) < 3 * Screen.pixelH
+                        v1 = Vectors.angleDistBetweenPoints point, {x: (dOffset + pixel.x) * 15, y: pixel.y}
+                    else
+                        v1 = Vectors.angleDistBetweenPoints point, pixel
+                    #want pixels horizontal with shot to explode out much more as shot follow-through
                     #                    v2 = Vectors.angleDistBetweenPoints origin, pixel
                     #                    v1.distance = 250
                     #                    v2 = Vectors.addVectors v1.angle, v1.distance, direction, 100
@@ -1081,190 +1390,63 @@ class World
                     @addParticle(pixel.x, pixel.y, v1.angle, v1.distance / 2 + 300, {r,g,b})
 
 
-window.World = World
-
-class Particle
-    constructor: () ->
-        @w = Screen.pixelW * 1.5
-        @h = Screen.pixelH * 1.5
-        @offsetX = @w / -2
-        @offsetY = @h / -2
-        @dead = true
-        @maxLife = Math.random() + 2
-        @colour = {}
-        @drag = 0.985
-
-    fire: (@x, @y, directionRad, speed, rgbValues) ->
-        directionRad += Math.random() / 10 - 0.05
-        speed *= 0.9 + Math.random() * 0.2
-        @dead = false
-        @offScreen = false
-        @hSpeed = (Math.cos(directionRad) * speed)
-        @vSpeed = (Math.sin(directionRad) * speed)
-        @life = @maxLife
-        @initColour(rgbValues)
-
-    draw: (cameraOffsetX) ->
-        Screen.ctx.fillStyle = @colour.hexString + @colour.alphaHex
-        Screen.ctx.fillRect(@x + @offsetX - cameraOffsetX, @y + @offsetY, @w, @h)
-
-    update: (delta) ->
-        @hSpeed *= @drag
-        @vSpeed *= @drag
-        @x += @hSpeed * delta
-        @y += @vSpeed * delta
-        @life -= delta
-        if @life <= 0
-            @dead = true
-        else
-            ratio = @life / @maxLife
-            if ratio < 0.5
-                alpha = Math.round(ratio * 2 * 255).toString(16)
-                alpha = '0' + alpha if alpha.length == 1
-                @colour.alphaHex = alpha
+#window.World = World
 
 
-    initColour: (rgbValues) ->
-        r = rgbValues.r.toString(16)
-        r = '0' + r if r.length == 1
-        g = rgbValues.g.toString(16)
-        g = '0' + g if g.length == 1
-        b = rgbValues.b.toString(16)
-        b = '0' + b if b.length == 1
-        @colour.rgb = rgbValues
-        @colour.hexString = '#'+r+g+b
-        @colour.alphaHex = 'ff'
+window.update = (timestamp) ->
+    Game.update(timestamp)
+    window.requestAnimationFrame update
+    true
+
+# Keys states (false: key is released / true: key is pressed)
+window.keysDown =
+    left: false
+    right: false
+    up: false
+    down: false
+    fire: false
+#    shift: false
+#    canShift: true
+window.paused = false
+
+window.keyToggled = (keyCode, isPressed) ->
+    if keyCode == 32
+        window.keysDown.fire = isPressed
+    # Up (up / W / Z)
+    if(keyCode == 38 || keyCode == 90 || keyCode == 87)
+        window.keysDown.up = isPressed
+    # Right (right / D)
+    if(keyCode == 39 || keyCode == 68)
+        window.keysDown.right = isPressed
+    # Down (down / S)
+    if(keyCode == 40 || keyCode == 83)
+        window.keysDown.down = isPressed
+    # Left (left / A / Q)
+    if(keyCode == 37 || keyCode == 65 ||keyCode == 81)
+        window.keysDown.left = isPressed
+    if(keyCode == 66)
+        window.paused = isPressed
+#    if(keyCode == 16)
+#        if isPressed && window.keysDown.canShift
+#            window.keysDown.shift = true
+#            window.keysDown.canShift = false
+#        if !isPressed
+#            window.keysDown.shift = false
+#            window.keysDown.canShift = true
+
+# Key listeners
+window.onkeydown = (e) ->
+    keyToggled(e.keyCode, true)
+
+window.onkeyup = (e) ->
+    keyToggled(e.keyCode, false)
 
 
-window.Particle = Particle
-
-Vectors =
-    originPoint: ->
-        {x:0, y:0}
-
-    degToRad: (deg) ->
-        0.017453292519943295 * deg
-
-    radToDeg: (rad) ->
-        57.29577951308232 * rad
-
-    rotatePoint: (point, angle) ->
-        x= point[0]
-        y= point[1]
-        # convert point to polar
-        length= Math.sqrt(x*x+y*y)
-        angleR= Math.acos(x/length)
-        if (y<0)
-            angleR = 0 - angleR
-        # add angle
-        angleR += angle
-        # convert back to cartesian
-        x1= Math.cos(angleR)* length
-        y1= Math.sin(angleR)* length
-        return [x1,y1]
-
-    rotatePath: (path, angle) ->
-        path.map (p) => @rotatePoint(p, angle)
-
-    addVectorToPoint: (point, angRad, length) ->
-#    angRad = @degToRad(direction)
-#    angRad = direction
-        newPoint = x:0, y:0
-        newPoint.x = point.x + (Math.cos(angRad) * length)
-        newPoint.y = point.y + (Math.sin(angRad) * length)
-        newPoint
-
-    addVectors: (angle1, length1, angle2, length2) ->
-        x1 = Math.cos(angle1) * length1
-        y1 = Math.sin(angle1) * length1
-        x2 = Math.cos(angle2) * length2
-        y2 = Math.sin(angle2) * length2
-
-        xR = x1 + x2
-        yR = y1 + y2
-        distance = Math.sqrt(xR*xR+yR*yR)
-        return [0,0] if distance is 0
-
-        angle = Math.acos(xR/distance)
-        angle = 0 - angle if yR < 0
-
-        return {angle, distance}
+#window.GameStates = GameStates
 
 
-    angleDistBetweenPoints: (fromPoint, toPoint) ->
-        return 0 if fromPoint is toPoint
-        x = toPoint.x - fromPoint.x
-        y = toPoint.y - fromPoint.y
-        distance= Math.sqrt(x*x+y*y)
-        angle= Math.acos(x/distance)
-        if y < 0
-            angle = 0 - angle
-        {angle, distance}
-
-    distBetweenPoints: (fromPoint, toPoint) ->
-        return 0 if fromPoint is toPoint
-        x = toPoint.x - fromPoint.x
-        y = toPoint.y - fromPoint.y
-        Math.sqrt(x*x+y*y)
-
-    shapesWithinReach: (shapeA, shapeB) ->
-        Vectors.distBetweenPoints(shapeA.position, shapeB.position) < shapeA.reach + shapeB.reach
-
-    shapeBounds: (paths) ->
-        return {minX:0, minY:0, maxX:0, maxY:0} if paths.length is 0 or paths[0].length is 0 or paths[0][0].length is 0
-        minX = maxX = paths[0][0][1]
-        minY = maxY = paths[0][0][1]
-        for path in paths
-            for point in path
-                minX = point[0] if point[0] < minX
-                maxX = point[0] if point[0] > maxX
-                minY = point[1] if point[1] < minY
-                maxY = point[1] if point[1] > maxY
-        {minX, maxX, minY, maxY}
-
-    shapeCentre: (paths) ->
-        bounds = @shapeBounds(paths)
-        {x: (bounds.minX + bounds.maxX)/2, y:(bounds.minY + bounds.maxY)/2}
-
-    distFromOrigin: (x, y) ->
-        Math.sqrt(x * x + y * y)
-
-    movePathOrigin: (paths, originX, originY) ->
-        for path in paths
-            for point in path
-                unless point.length is 0
-                    point[0] -= originX
-                    point[1] -= originY
-
-    centrePath: (paths) ->
-        centre = Vectors.shapeCentre(paths)
-        Vectors.movePathOrigin(paths, centre.x, centre.y)
-
-    centrePathH: (paths) ->
-        centre = Vectors.shapeCentre(paths)
-        Vectors.movePathOrigin(paths, centre.x, 0)
-
-    centrePathV: (paths) ->
-        centre = Vectors.shapeCentre(paths)
-        Vectors.movePathOrigin(paths, 0, centre.y)
-
-
-window.Vectors = Vectors
-
-class ItemPool
-    constructor: (itemClass, poolSize) ->
-        @pool = []
-        for i in [0..poolSize]
-            @pool.push new itemClass()
-        @itemIndex = 0
-
-    getNextItem: ->
-        item = @pool[@itemIndex]
-        @itemIndex += 1
-        if @itemIndex == @pool.length
-            @itemIndex = 0
-        return item
-
-
-window.ItemPool = ItemPool
-
+window.Game = Game
+window.Screen = Screen
+window.Typer = Typer
+window.Colours = Colours
+window.Sprite = Sprite

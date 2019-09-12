@@ -1,7 +1,8 @@
 let charBytes = []
 for (let i=0; i< 128; i++) {
     // fill with checkerboard pattern so I can easily see if I've missed one
-    charBytes[i] = [178,85,178,85,178,85,178,85]
+    // charBytes[i] = [178,85,178,85,178,85,178,85]
+    charBytes[i] = [0,0,0,0,0,0,0,0]
 }
 
 
@@ -18,118 +19,276 @@ const astroDigits = `
 7e42427e06060600
 `
 
+const triangles = `
+fffefcf8f0e0c080
+ff7f3f1f0f070301
+0103070f1f3f7fff
+80c0e0f0f8fcfeff
+1f3f7fffffffffff
+f8fcfeffffffffff
+fffffffffffefcf8
+ffffffffff7f3f1f
+f0e0c08000000000
+0f07030100000000
+000000000103070f
+0000000080c0e0f0
+7fbfdfeff7fbfdfe
+ffffffffffffffff
+0f0f0f0f0f0f0f0f
+f0f0f0f0f0f0f0f0
+`
+
+const lowercase = `
+000038043c443a00
+40405c6242625c00
+00003c4240423c00
+02023a4642463a00
+00003c427e403c00
+0c12107c10101000
+00003a46463a023c
+40405c6242424200
+0800180808081c00
+04000c0404044438
+4040444850684400
+1808080808081c00
+0000764949494900
+00005c6242424200
+00003c4242423c00
+00005c62625c4040
+00003a46463a0202
+00005c6240404000
+00003e403c027c00
+10107c1010120c00
+0000424242463a00
+0000424242241800
+0000414949493600
+0000422418244200
+00004242463a023c
+00007e0418207e00
+`
+
 const guppie = `
 03c0
-f0f0
-70f0
-f3fc
-33ac
-3faa
-3faa
-33ac
-f3fc
-70f0
-f0f0
+b1f0
+fdf0
+7ffc
+1fa4
+0daa
+0daa
+1fa4
+7ffc
+fdf0
+b1f0
 03c0
 `
+// const guppie = `
+// 03c0
+// f0f0
+// 70f0
+// f3fc
+// 33ac
+// 3faa
+// 3faa
+// 33ac
+// f3fc
+// 70f0
+// f0f0
+// 03c0
+// `
 const mine = `
-0300
-0300
-0080
-0080
-0300
-0300
-2173
-2173
-cd48
-cd48
-00c0
-00c0
+0cc0
+0cc0
 0200
 0200
-00c0
-00c0
+c54c
+c54c
+2660
+2660
+c54c
+c54c
+0200
+0200
+0cc0
+0cc0
 `
+// const mine = `
+// 0300
+// 0300
+// 0080
+// 0080
+// 0300
+// 0300
+// 2173
+// 2173
+// cd48
+// cd48
+// 00c0
+// 00c0
+// 0200
+// 0200
+// 00c0
+// 00c0
+// `
 
 const building = `
-0200
-0200
-0200
 0a80
-2320
-2320
-2320
+0880
+0880
+0b80
+2ce0
+2ce0
+2ce0
 2fe0
-2320
-2320
-2320
-2fe0
-2320
-2320
-2320
+2ce0
+2ce0
+2ce0
 bff8
-8cc8
-8cc8
-8cc8
+b338
+b338
+b338
 bff8
-8cc8
-8cc8
-8cc8
+b338
+b338
+b338
 bff8
-8cc8
-8cc8
-8cc8
+b338
+b338
+b338
 bff8
-8008
-8548
-8448
+b338
+b338
+b338
+bff8
+bdf8
+bdf8
+bdf8
 aaa8
 `
+//
+// const building = `
+// 0200
+// 0200
+// 0200
+// 0a80
+// 2320
+// 2320
+// 2320
+// 2fe0
+// 2320
+// 2320
+// 2320
+// 2fe0
+// 2320
+// 2320
+// 2320
+// bff8
+// 8cc8
+// 8cc8
+// 8cc8
+// bff8
+// 8cc8
+// 8cc8
+// 8cc8
+// bff8
+// 8cc8
+// 8cc8
+// 8cc8
+// bff8
+// 8008
+// 8548
+// 8448
+// aaa8
+// `
 
 const ship = `
-ff000000
-fc000000
-3f000000
+03ff0000
+03f00000
 0fc00000
-3ff00000
-2aa95000
-eaaa5400
-eaaa95b0
-eaaaaabc
+0fc00000
+3fc00000
+3ff95000
+eaa95400
+eaa955b0
+eaaa56bc
 efeaaaaf
-3faaaabc
-fc000000
-ff000000
+3feabffc
+0ff00f00
+03ff03c0
 `
+// const ship = `
+// ff000000
+// fc000000
+// 3f000000
+// 0fc00000
+// 3ff00000
+// 2aa95000
+// eaaa5400
+// eaaa95b0
+// eaaaaabc
+// efeaaaaf
+// 3faaaabc
+// fc000000
+// ff000000
+// `
 const radar = `
-0140
-0140
-0140
-0140
+03c0
+03c0
+03c0
+03c0
 aaaa
 2aa8
 0aa0
-03c0
-03c0
+0280
+0410
+1004
+0410
+0140
+0ff0
 3ffc
-2ff8
-2008
-2008
-8822
-8822
-a82a
+3ffc
+1554
 `
+// const radar = `
+// 0140
+// 0140
+// 0140
+// 0140
+// aaaa
+// 2aa8
+// 0aa0
+// 03c0
+// 03c0
+// 3ffc
+// 2ff8
+// 2008
+// 2008
+// 8822
+// 8822
+// a82a
+// `
 const ufo = `
 0280
-0eb0
+0e90
 2aa8
-8296
-8296
-8296
-8296
+96be
+95fe
+95fe
+96be
 2aa8
-0be0
+0e90
+0280
 `
+// const ufo = `
+// 0280
+// 0eb0
+// 2aa8
+// 8296
+// 8296
+// 8296
+// 8296
+// 2aa8
+// 0be0
+// `
 const playerShot = `
 0000
 01e8
@@ -139,6 +298,24 @@ const playerShot = `
 const enemyShot = `
 01
 01
+`
+const snake = `
+03c0
+3be0
+3aa0
+3aa8
+02a8
+0258
+015a
+0556
+0556
+015a
+0258
+02a8
+3aa8
+3aa0
+3be0
+03c0
 `
 
 function addChars(startPos, charData) {
@@ -161,8 +338,8 @@ addChars(32, `
 2424240000000000
 24247e247e242400
 080808082a1c0800
+0062640810264600
 00000804fe040800
-304848304a443a00
 0408100000000000
 0408101010080400
 2010080808102000
@@ -221,32 +398,6 @@ c9808080c1e3f7ff
 081c2a0808080800
 000010207f201000
 1c224a564c201e00
-000038043c443a00
-40405c6242625c00
-00003c4240423c00
-02023a4642463a00
-00003c427e403c00
-0c12107c10101000
-00003a46463a023c
-40405c6242424200
-0800180808081c00
-04000c0404044438
-4040444850684400
-1808080808081c00
-0000764949494900
-00005c6242424200
-00003c4242423c00
-00005c62625c4040
-00003a46463a0202
-00005c6240404000
-00003e403c027c00
-10107c1010120c00
-0000424242463a00
-0000424242241800
-0000414949493600
-0000422418244200
-00004242463a023c
-00007e0418207e00
     `)
 
 function runIntro() {
@@ -286,7 +437,8 @@ function initSprites() {
         ufo: new Sprite(ufo, 8, 9, colours),
         ship: new Sprite(ship, 16, 13, colours),
         playerShot: new Sprite(playerShot, 8, 4, colours), //[Colours.BLUE, Colours.PURPLE, Colours.CYAN])
-        enemyShot: new Sprite(enemyShot, 4, 2, [Colours.CYAN]) //[Colours.BLUE, Colours.PURPLE, Colours.CYAN])
+        enemyShot: new Sprite(enemyShot, 4, 2, [Colours.CYAN]), //[Colours.BLUE, Colours.PURPLE, Colours.CYAN])
+        snake: new Sprite(snake, 8, 16, colours) // [Colours.YELLOW, Colours.BLUE, Colours.RED])
     }
 }
 function randInt(range) {
@@ -314,31 +466,32 @@ function buildHitbox(offsetX, offsetY, left, top, right, bottom) {
 function test() {
     initScreen()
     Typer.display([
-        'd:**** CBM BASIC V2 ***',
-        'd:',
-        'd:13312 BYTES FREE',
-        'd:',
-        'd:READY.',
-        'w:200',
+            'd:**** CBM BASIC V3 ***',
+            'd:',
+            'd:13312 BYTES FREE',
+            'd:',
+            'd:READY.',
+            'w:200',
 
-        // 'w:2000',
-        // 't:LOAD "GAME",8',
-        // 'd:',
-        // 'd:SEARCHING FOR GAME',
-        // 'p:1000',
-        // 'd:LOADING',
-        // 'p:2000',
-        // 'd:READY.',
-        // 'w:1000',
-        // 't:?"@"',
-        // 'x:',
-        // 't:RUN',
-        // 'p:500',
-        // 'c:BLACK',
+            'w:1500',
+            't:LOAD "VICBLITZ",8',
+            'd:',
+            'd:SEARCHING FOR VICBLITZ',
+            'p:1000',
+            'd:LOADING',
+            'p:2000',
+            'd:READY.',
+            'd:',
+            'w:1000',
+            // 't:?"@"',
+            // 'x:',
+            't:RUN',
+            'p:500',
+            'c:BLACK',
 
         ],
         function(){
             initSprites()
             Game.run()
-    })
+        })
 }

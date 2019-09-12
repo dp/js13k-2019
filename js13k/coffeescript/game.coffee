@@ -18,6 +18,7 @@ Game =
         @cooldown = 0
         Screen.setSize(25, 23)
         addChars(48, astroDigits)
+        addChars(97, lowercase)
         @showStory()
 
     update: (timestamp) ->
@@ -89,7 +90,7 @@ Game =
                             @level
                         else
                             @level - 1
-            Screen.printAt 5, 8, "LEVEL #{levelText} CLEARED"
+            Screen.printAt 6, 8, "MOON #{levelText} CLEARED"
             Screen.printAt 8, 10, 'WARPING ...'
             Screen.textColour = Colours.BLUE
         else if @state == GameStates.PLAYING_WARPING_WIN
@@ -121,6 +122,8 @@ Game =
 
     startGame: ->
         @state = GameStates.PLAYING_SPAWNING
+        addChars(97, lowercase)
+
         Screen.clear()
         Screen.printAt 8, 4, "Playing ..."
         @score = 0
@@ -165,15 +168,30 @@ Game =
 
     showTitleScreen: ->
         Typer.clear()
+        addChars(97, triangles)
+
         @state = GameStates.TITLE_SCREEN
         Cursor.hide()
         Screen.setBorder(Colours.BLUE)
         Screen.screenColour = Colours.BLACK
-        Screen.textColour = Colours.WHITE
         Screen.clear()
-        Screen.printAt 8, 4, "JS BLITZ"
+
+        Screen.textColour = Colours.YELLOW
+        Screen.printAt 3, 2, "n nopnianean n n kea"
+        Screen.textColour = Colours.GREEN
+        Screen.printAt 3, 3, "bdnopnldnhdn n nkea "
+        Screen.textColour = Colours.PURPLE
+        Screen.printAt 3, 5, "  b"
+        Screen.textColour = Colours.RED
+        Screen.printAt 3, 1, "d dopcn nhdd mnnmnnd"
+        Screen.printAt 10, 3, "d"
+        Screen.textColour = Colours.BLUE
+        Screen.printAt 3, 4, " bnopbn neabnm bjhnd"
+        Screen.printAt 10, 2, "a"
         #        @hLine(5)
-        Screen.printAt 0, 6, "COME WITH ME, BACK TO '83"
+        Screen.textColour = Colours.WHITE
+#        Screen.printAt 0, 6, "COME WITH ME, BACK TO '83"
+        Screen.printAt 0, 6, "GET THE SHIP BACK TO BASE"
         @hLine(7)
 
         Screen.printAt 15, 9, "50"
@@ -188,7 +206,7 @@ Game =
         @hLine(22)
         Screen.textColour = Colours.YELLOW
         Screen.printAt 3, 21, 'PRESS SPACE TO START'
-        Screen.textColour = Colours.CYAN
+        Screen.textColour = Colours.PURPLE
         Screen.printAt 1, 11, "^ _ $ &"
         Screen.printAt 1, 13, "W A S D"
         Screen.printAt 1, 17, "SPACE"
@@ -257,10 +275,7 @@ Game =
 
 window.update = (timestamp) ->
     Game.update(timestamp)
-    if window.paused
-        console.log 'Game is paused'
-    else
-        window.requestAnimationFrame update
+    window.requestAnimationFrame update
     true
 
 # Keys states (false: key is released / true: key is pressed)
@@ -291,7 +306,6 @@ window.keyToggled = (keyCode, isPressed) ->
         window.keysDown.left = isPressed
     if(keyCode == 66)
         window.paused = isPressed
-        console.log('Paused', window.paused)
 #    if(keyCode == 16)
 #        if isPressed && window.keysDown.canShift
 #            window.keysDown.shift = true

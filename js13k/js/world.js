@@ -56,14 +56,14 @@
         ufos = 5;
         radars = 3;
       } else if (level === 2) {
-        ufos = 8;
+        ufos = 12;
         radars = 5;
         mines = 0;
         guppies = 0;
       } else if (level === 3) {
-        ufos = 5;
+        ufos = 10;
         radars = 5;
-        mines = 4;
+        mines = 6;
         guppies = 0;
       } else if (level === 4) {
         ufos = 3;
@@ -105,7 +105,7 @@
         }
       }
       this.guppies = level > 1;
-      return this.nextGuppieSpawn = 30;
+      return this.nextGuppieSpawn = 20;
     };
 
     World.prototype.getNextPlayerShot = function() {
@@ -121,7 +121,7 @@
     };
 
     World.prototype.spawnGuppie = function() {
-      this.nextGuppieSpawn = 30;
+      this.nextGuppieSpawn = 20;
       return this.items.push(new Guppie(this.ship.x + this.spawnWidth / 2));
     };
 

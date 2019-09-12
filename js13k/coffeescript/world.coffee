@@ -42,14 +42,14 @@ class World
             ufos = 5
             radars = 3
         else if level == 2
-            ufos = 8
+            ufos = 12
             radars = 5
             mines = 0
             guppies = 0
         else if level == 3
-            ufos = 5
+            ufos = 10
             radars = 5
-            mines = 4
+            mines = 6
             guppies = 0
         else if level == 4
             ufos = 3
@@ -81,7 +81,7 @@ class World
             for i in [0...guppies]
                 @items.push new Guppie(randInt(@spawnWidth))
         @guppies = level > 1
-        @nextGuppieSpawn = 30
+        @nextGuppieSpawn = 20
 
     getNextPlayerShot: ->
         @playerShots.getNextItem()
@@ -93,7 +93,7 @@ class World
         @particles.getNextItem().fire(x, y, directionRad, speed, colour)
 
     spawnGuppie: ->
-        @nextGuppieSpawn = 30
+        @nextGuppieSpawn = 20
         @items.push new Guppie(@ship.x + @spawnWidth / 2)
 
     update: (delta) ->
